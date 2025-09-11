@@ -1,0 +1,60 @@
+{
+  "rxHistory": [
+    {
+      "id": "rxh001",
+      "dos": "2023-11-20",
+      "dayssupply": 30,
+      "medication": "Lisinopril 5mg",
+      "dosage": "5mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Brown",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-89",
+      "copay": 12.00,
+      "fillDate": "2023-11-20",
+      "refillsRemaining": 5
+    },
+    {
+      "id": "rxh002",
+      "dos": "2023-12-15",
+      "dayssupply": 60,
+      "medication": "Simvastatin 40mg",
+      "dosage": "40mg once daily",
+      "quantity": 60,
+      "prescriber": "Dr. Davis",
+      "pharmacy": "Walgreens #5678",
+      "ndc": "77777-888-99",
+      "copay": 18.50,
+      "fillDate": "2023-12-15",
+      "refillsRemaining": 2
+    },
+    {
+      "id": "rxh003",
+      "dos": "2024-01-08",
+      "dayssupply": 7,
+      "medication": "Prednisone 20mg",
+      "dosage": "20mg once daily, taper as directed",
+      "quantity": 7,
+      "prescriber": "Dr. Wilson",
+      "pharmacy": "Independent Pharmacy",
+      "ndc": "33333-444-55",
+      "copay": 8.00,
+      "fillDate": "2024-01-08",
+      "refillsRemaining": 0
+    },
+    {
+      "id": "rxh004",
+      "dos": "2024-01-25",
+      "dayssupply": 90,
+      "medication": "Metformin 1000mg",
+      "dosage": "1000mg twice daily with meals",
+      "quantity": 180,
+      "prescriber": "Dr. Johnson",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "98765-432-11",
+      "copay": 30.00,
+      "fillDate": "2024-01-25",
+      "refillsRemaining": 3
+    }
+  ]
+}

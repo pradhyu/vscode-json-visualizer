@@ -1,0 +1,52 @@
+{
+  "rxTba": [
+    {
+      "id": "rx001",
+      "dos": "2024-01-15",
+      "dayssupply": 30,
+      "medication": "Lisinopril 10mg",
+      "dosage": "10mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Smith",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-90",
+      "copay": 15.00
+    },
+    {
+      "id": "rx002", 
+      "dos": "2024-02-10",
+      "dayssupply": 90,
+      "medication": "Metformin 500mg",
+      "dosage": "500mg twice daily",
+      "quantity": 180,
+      "prescriber": "Dr. Johnson",
+      "pharmacy": "Walgreens #5678",
+      "ndc": "98765-432-10",
+      "copay": 25.00
+    },
+    {
+      "id": "rx003",
+      "dos": "2024-03-05",
+      "dayssupply": 14,
+      "medication": "Amoxicillin 500mg",
+      "dosage": "500mg three times daily",
+      "quantity": 42,
+      "prescriber": "Dr. Williams",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "11111-222-33",
+      "copay": 10.00
+    },
+    {
+      "id": "rx004",
+      "dos": "2024-03-20",
+      "dayssupply": 30,
+      "medication": "Atorvastatin 20mg",
+      "dosage": "20mg once daily at bedtime",
+      "quantity": 30,
+      "prescriber": "Dr. Smith",
+      "pharmacy": "Rite Aid #9876",
+      "ndc": "44444-555-66",
+      "copay": 20.00
+    }
+  ]
+}

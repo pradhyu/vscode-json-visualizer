@@ -1,0 +1,133 @@
+{
+  "name": "medical-claims-timeline-viewer",
+  "displayName": "Medical Claims Timeline Viewer",
+  "description": "VSCode extension to visualize medical claims data in an interactive timeline chart",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Visualization",
+    "Data Science"
+  ],
+  "activationEvents": [
+    "onLanguage:json",
+    "onCommand:medicalClaimsTimeline.viewTimeline"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "medicalClaimsTimeline.viewTimeline",
+        "title": "View Timeline",
+        "category": "Medical Claims"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "medicalClaimsTimeline.viewTimeline",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "medicalClaimsTimeline.viewTimeline",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "medicalClaimsTimeline.viewTimeline",
+          "when": "editorLangId == json"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "medicalClaimsTimeline.viewTimeline",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "editorLangId == json"
+      }
+    ],
+    "configuration": {
+      "title": "Medical Claims Timeline",
+      "properties": {
+        "medicalClaimsTimeline.rxTbaPath": {
+          "type": "string",
+          "default": "rxTba",
+          "description": "JSON path to rxTba array"
+        },
+        "medicalClaimsTimeline.rxHistoryPath": {
+          "type": "string",
+          "default": "rxHistory",
+          "description": "JSON path to rxHistory array"
+        },
+        "medicalClaimsTimeline.medHistoryPath": {
+          "type": "string",
+          "default": "medHistory",
+          "description": "JSON path to medHistory array"
+        },
+        "medicalClaimsTimeline.dateFormat": {
+          "type": "string",
+          "default": "YYYY-MM-DD",
+          "description": "Date format for parsing claim dates"
+        },
+        "medicalClaimsTimeline.colors": {
+          "type": "object",
+          "default": {
+            "rxTba": "#FF6B6B",
+            "rxHistory": "#4ECDC4",
+            "medHistory": "#45B7D1"
+          },
+          "description": "Color scheme for different claim types",
+          "properties": {
+            "rxTba": {
+              "type": "string",
+              "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+              "description": "Hex color for rxTba claims"
+            },
+            "rxHistory": {
+              "type": "string",
+              "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+              "description": "Hex color for rxHistory claims"
+            },
+            "medHistory": {
+              "type": "string",
+              "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+              "description": "Hex color for medHistory claims"
+            }
+          }
+        },
+        "medicalClaimsTimeline.customMappings": {
+          "type": "object",
+          "default": {},
+          "description": "Custom attribute path mappings for different JSON structures",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "^18.0.0",
+    "typescript": "^4.9.4",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0"
+  },
+  "dependencies": {
+    "moment": "^2.29.4"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med001",
+        "provider": "City General Hospital",
+        "claimDate": "2024-01-10",
+        "totalAmount": 1250.00,
+        "lines": [
+          {
+            "lineId": "line001",
+            "srvcStart": "2024-01-10",
+            "srvcEnd": "2024-01-10",
+            "serviceType": "Emergency Room Visit",
+            "procedureCode": "99284",
+            "description": "Emergency department visit for evaluation and management",
+            "chargedAmount": 850.00,
+            "allowedAmount": 680.00,
+            "paidAmount": 612.00
+          },
+          {
+            "lineId": "line002", 
+            "srvcStart": "2024-01-10",
+            "srvcEnd": "2024-01-10",
+            "serviceType": "Laboratory",
+            "procedureCode": "80053",
+            "description": "Comprehensive metabolic panel",
+            "chargedAmount": 200.00,
+            "allowedAmount": 150.00,
+            "paidAmount": 135.00
+          },
+          {
+            "lineId": "line003",
+            "srvcStart": "2024-01-10", 
+            "srvcEnd": "2024-01-10",
+            "serviceType": "Radiology",
+            "procedureCode": "71020",
+            "description": "Chest X-ray, two views",
+            "chargedAmount": 200.00,
+            "allowedAmount": 120.00,
+            "paidAmount": 108.00
+          }
+        ]
+      },
+      {
+        "claimId": "med002",
+        "provider": "Dr. Smith Family Practice",
+        "claimDate": "2024-02-15",
+        "totalAmount": 350.00,
+        "lines": [
+          {
+            "lineId": "line004",
+            "srvcStart": "2024-02-15",
+            "srvcEnd": "2024-02-15", 
+            "serviceType": "Office Visit",
+            "procedureCode": "99213",
+            "description": "Office visit, established patient, moderate complexity",
+            "chargedAmount": 250.00,
+            "allowedAmount": 180.00,
+            "paidAmount": 162.00
+          },
+          {
+            "lineId": "line005",
+            "srvcStart": "2024-02-15",
+            "srvcEnd": "2024-02-15",
+            "serviceType": "Laboratory",
+            "procedureCode": "85025",
+            "description": "Complete blood count with differential",
+            "chargedAmount": 100.00,
+            "allowedAmount": 75.00,
+            "paidAmount": 67.50
+          }
+        ]
+      },
+      {
+        "claimId": "med003",
+        "provider": "Regional Imaging Center",
+        "claimDate": "2024-03-08",
+        "totalAmount": 2100.00,
+        "lines": [
+          {
+            "lineId": "line006",
+            "srvcStart": "2024-03-08",
+            "srvcEnd": "2024-03-08",
+            "serviceType": "MRI",
+            "procedureCode": "72148",
+            "description": "MRI lumbar spine without contrast",
+            "chargedAmount": 2100.00,
+            "allowedAmount": 1400.00,
+            "paidAmount": 1260.00
+          }
+        ]
+      },
+      {
+        "claimId": "med004",
+        "provider": "Specialty Cardiology Associates",
+        "claimDate": "2024-03-22",
+        "totalAmount": 800.00,
+        "lines": [
+          {
+            "lineId": "line007",
+            "srvcStart": "2024-03-22",
+            "srvcEnd": "2024-03-25",
+            "serviceType": "Cardiac Monitoring",
+            "procedureCode": "93224",
+            "description": "External electrocardiographic recording up to 48 hours",
+            "chargedAmount": 600.00,
+            "allowedAmount": 450.00,
+            "paidAmount": 405.00
+          },
+          {
+            "lineId": "line008",
+            "srvcStart": "2024-03-25",
+            "srvcEnd": "2024-03-25",
+            "serviceType": "Office Visit",
+            "procedureCode": "99214",
+            "description": "Office visit, established patient, moderate to high complexity",
+            "chargedAmount": 200.00,
+            "allowedAmount": 150.00,
+            "paidAmount": 135.00
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "patientInfo": {
+    "patientId": "PAT12345",
+    "name": "[Patient Name]",
+    "dateOfBirth": "1975-06-15",
+    "memberNumber": "MEM789012"
+  },
+  "rxTba": [
+    {
+      "id": "rx101",
+      "dos": "2024-01-15",
+      "dayssupply": 30,
+      "medication": "Lisinopril 10mg",
+      "dosage": "10mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Smith",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-90",
+      "copay": 15.00
+    },
+    {
+      "id": "rx102",
+      "dos": "2024-02-14",
+      "dayssupply": 30,
+      "medication": "Lisinopril 10mg",
+      "dosage": "10mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Smith", 
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-90",
+      "copay": 15.00
+    },
+    {
+      "id": "rx103",
+      "dos": "2024-03-18",
+      "dayssupply": 14,
+      "medication": "Azithromycin 250mg",
+      "dosage": "250mg once daily",
+      "quantity": 14,
+      "prescriber": "Dr. Williams",
+      "pharmacy": "Walgreens #5678",
+      "ndc": "22222-333-44",
+      "copay": 12.00
+    }
+  ],
+  "rxHistory": [
+    {
+      "id": "rxh101",
+      "dos": "2023-10-15",
+      "dayssupply": 30,
+      "medication": "Lisinopril 5mg",
+      "dosage": "5mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Brown",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-89",
+      "copay": 12.00,
+      "fillDate": "2023-10-15",
+      "refillsRemaining": 5
+    },
+    {
+      "id": "rxh102",
+      "dos": "2023-11-14",
+      "dayssupply": 30,
+      "medication": "Lisinopril 5mg",
+      "dosage": "5mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Brown",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-89",
+      "copay": 12.00,
+      "fillDate": "2023-11-14",
+      "refillsRemaining": 4
+    },
+    {
+      "id": "rxh103",
+      "dos": "2023-12-14",
+      "dayssupply": 30,
+      "medication": "Lisinopril 10mg",
+      "dosage": "10mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Smith",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-90",
+      "copay": 15.00,
+      "fillDate": "2023-12-14",
+      "refillsRemaining": 5
+    },
+    {
+      "id": "rxh104",
+      "dos": "2024-01-05",
+      "dayssupply": 90,
+      "medication": "Metformin 500mg",
+      "dosage": "500mg twice daily",
+      "quantity": 180,
+      "prescriber": "Dr. Johnson",
+      "pharmacy": "Walgreens #5678",
+      "ndc": "98765-432-10",
+      "copay": 25.00,
+      "fillDate": "2024-01-05",
+      "refillsRemaining": 2
+    }
+  ],
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med101",
+        "provider": "Dr. Smith Family Practice",
+        "claimDate": "2024-01-08",
+        "totalAmount": 280.00,
+        "lines": [
+          {
+            "lineId": "line101",
+            "srvcStart": "2024-01-08",
+            "srvcEnd": "2024-01-08",
+            "serviceType": "Office Visit",
+            "procedureCode": "99213",
+            "description": "Office visit, established patient, moderate complexity",
+            "chargedAmount": 180.00,
+            "allowedAmount": 140.00,
+            "paidAmount": 126.00
+          },
+          {
+            "lineId": "line102",
+            "srvcStart": "2024-01-08",
+            "srvcEnd": "2024-01-08",
+            "serviceType": "Laboratory",
+            "procedureCode": "80053",
+            "description": "Comprehensive metabolic panel",
+            "chargedAmount": 100.00,
+            "allowedAmount": 75.00,
+            "paidAmount": 67.50
+          }
+        ]
+      },
+      {
+        "claimId": "med102",
+        "provider": "City General Hospital",
+        "claimDate": "2024-02-20",
+        "totalAmount": 3200.00,
+        "lines": [
+          {
+            "lineId": "line103",
+            "srvcStart": "2024-02-20",
+            "srvcEnd": "2024-02-22",
+            "serviceType": "Inpatient Stay",
+            "procedureCode": "99223",
+            "description": "Initial hospital care, comprehensive",
+            "chargedAmount": 1800.00,
+            "allowedAmount": 1200.00,
+            "paidAmount": 1080.00
+          },
+          {
+            "lineId": "line104",
+            "srvcStart": "2024-02-20",
+            "srvcEnd": "2024-02-20",
+            "serviceType": "Laboratory",
+            "procedureCode": "85025",
+            "description": "Complete blood count with differential",
+            "chargedAmount": 150.00,
+            "allowedAmount": 100.00,
+            "paidAmount": 90.00
+          },
+          {
+            "lineId": "line105",
+            "srvcStart": "2024-02-21",
+            "srvcEnd": "2024-02-21",
+            "serviceType": "Radiology",
+            "procedureCode": "74177",
+            "description": "CT abdomen and pelvis with contrast",
+            "chargedAmount": 1250.00,
+            "allowedAmount": 800.00,
+            "paidAmount": 720.00
+          }
+        ]
+      },
+      {
+        "claimId": "med103",
+        "provider": "Specialty Cardiology Associates",
+        "claimDate": "2024-03-15",
+        "totalAmount": 450.00,
+        "lines": [
+          {
+            "lineId": "line106",
+            "srvcStart": "2024-03-15",
+            "srvcEnd": "2024-03-15",
+            "serviceType": "Consultation",
+            "procedureCode": "99244",
+            "description": "Office consultation, comprehensive",
+            "chargedAmount": 350.00,
+            "allowedAmount": 280.00,
+            "paidAmount": 252.00
+          },
+          {
+            "lineId": "line107",
+            "srvcStart": "2024-03-15",
+            "srvcEnd": "2024-03-15",
+            "serviceType": "Diagnostic Test",
+            "procedureCode": "93000",
+            "description": "Electrocardiogram, routine ECG with interpretation",
+            "chargedAmount": 100.00,
+            "allowedAmount": 65.00,
+            "paidAmount": 58.50
+          }
+        ]
+      },
+      {
+        "claimId": "med104",
+        "provider": "Regional Imaging Center",
+        "claimDate": "2024-03-28",
+        "totalAmount": 1800.00,
+        "lines": [
+          {
+            "lineId": "line108",
+            "srvcStart": "2024-03-28",
+            "srvcEnd": "2024-03-28",
+            "serviceType": "MRI",
+            "procedureCode": "70553",
+            "description": "MRI brain with and without contrast",
+            "chargedAmount": 1800.00,
+            "allowedAmount": 1200.00,
+            "paidAmount": 1080.00
+          }
+        ]
+      }
+    ]
+  }
+}
