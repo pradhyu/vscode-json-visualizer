@@ -610,14 +610,15 @@ describe('Comprehensive Regression Test Suite - Task 10', () => {
 
                 renderer.createPanel(largeData);
                 
-                setTimeout(() => {
-                    const calls = (mockPanel.webview.postMessage as any).mock.calls;
-                    expect(calls.length).toBeGreaterThan(0);
-                    
-                    const call = calls[0];
-                    const payload = call[0].payload;
-                    
-                    expect(payload.claims).toHaveLength(100);
+                return new Promise<void>((resolve) => {
+                    setTimeout(() => {
+                        const calls = (mockPanel.webview.postMessage as any).mock.calls;
+                        expect(calls.length).toBeGreaterThan(0);
+                        
+                        const call = calls[0];
+                        const payload = call[0].payload;
+                        
+                        expect(payload.claims).toHaveLength(100);
                     expect(payload.metadata.totalClaims).toBe(100);
                     done();
                 }, 100);
