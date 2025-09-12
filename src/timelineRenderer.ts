@@ -33,7 +33,7 @@ export class TimelineRenderer {
     /**
      * Create and show timeline webview panel
      */
-    public createPanel(data: TimelineData): vscode.WebviewPanel {
+    public createPanel(data: TimelineData): vscode.WebviewPanel | null {
         console.log('=== DIAGNOSTIC: TimelineRenderer.createPanel started ===');
         
         // If panel already exists, reveal it and update data
@@ -43,60 +43,71 @@ export class TimelineRenderer {
             return this.panel;
         }
         
-        // Create new webview panel
-        this.panel = vscode.window.createWebviewPanel(
-            TimelineRenderer.viewType,
-            'Medical Claims Timeline',
-            vscode.ViewColumn.One,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true,
-                localResourceRoots: [
-                    vscode.Uri.joinPath(this.context.extensionUri, 'webview')
-                ]
-            }
-        );
-        
-        // Set webview HTML content
-        this.panel.webview.html = this.getWebviewContent();
-        
-        // Handle messages from webview
-        this.panel.webview.onDidReceiveMessage(
-            (message: WebviewMessage) => {
-                this.handleMessage(message);
-            },
-            undefined,
-            this.context.subscriptions
-        );
-
-        // Handle panel disposal
-        this.panel.onDidDispose(
-            () => {
-                this.panel = undefined;
-            },
-            null,
-            this.context.subscriptions
-        );
-        
-        // Store current data and send to webview
-        this.currentData = data;
-        
-        // Send data immediately without waiting for ready message
-        setTimeout(() => {
-            if (this.panel && this.currentData) {
-                try {
-                    const serializedData = this.serializeTimelineData(this.currentData);
-                    this.panel.webview.postMessage({
-                        command: 'updateData',
-                        payload: serializedData
-                    });
-                } catch (error) {
-                    console.error('Error sending data to webview:', error);
+        try {
+            // Create new webview panel
+            this.panel = vscode.window.createWebviewPanel(
+                TimelineRenderer.viewType,
+                'Medical Claims Timeline',
+                vscode.ViewColumn.One,
+                {
+                    enableScripts: true,
+                    retainContextWhenHidden: true,
+                    localResourceRoots: [
+                        vscode.Uri.joinPath(this.context.extensionUri, 'webview')
+                    ]
                 }
-            }
-        }, 50);
+            );
 
-        return this.panel;
+            // Handle null panel creation
+            if (!this.panel) {
+                console.error('Failed to create webview panel');
+                return null;
+            }
+            
+            // Set webview HTML content
+            this.panel.webview.html = this.getWebviewContent();
+            
+            // Handle messages from webview
+            this.panel.webview.onDidReceiveMessage(
+                (message: WebviewMessage) => {
+                    this.handleMessage(message);
+                },
+                undefined,
+                this.context.subscriptions
+            );
+
+            // Handle panel disposal
+            this.panel.onDidDispose(
+                () => {
+                    this.panel = undefined;
+                },
+                null,
+                this.context.subscriptions
+            );
+            
+            // Store current data and send to webview
+            this.currentData = data;
+            
+            // Send data immediately without waiting for ready message
+            setTimeout(() => {
+                if (this.panel && this.currentData) {
+                    try {
+                        const serializedData = this.serializeTimelineData(this.currentData);
+                        this.panel.webview.postMessage({
+                            command: 'updateData',
+                            payload: serializedData
+                        });
+                    } catch (error) {
+                        console.error('Error sending data to webview:', error);
+                    }
+                }
+            }, 50);
+
+            return this.panel;
+        } catch (error) {
+            console.error('Error creating webview panel:', error);
+            return null;
+        }
     }
 
     /**
@@ -124,24 +135,38 @@ export class TimelineRenderer {
      * Handle messages from webview
      */
     private handleMessage(message: WebviewMessage): void {
-        switch (message.command) {
-            case 'ready':
-                if (this.currentData && this.panel) {
-                    const serializedData = this.serializeTimelineData(this.currentData);
-                    this.panel.webview.postMessage({
-                        command: 'updateData',
-                        payload: serializedData
-                    });
-                }
-                break;
+        try {
+            // Handle null or malformed messages
+            if (!message || typeof message !== 'object') {
+                console.warn('Received invalid message:', message);
+                return;
+            }
 
-            case 'select':
-                this.handleClaimSelection(message.payload);
-                break;
+            switch (message.command) {
+                case 'ready':
+                    if (this.currentData && this.panel) {
+                        const serializedData = this.serializeTimelineData(this.currentData);
+                        this.panel.webview.postMessage({
+                            command: 'updateData',
+                            payload: serializedData
+                        });
+                    }
+                    break;
 
-            case 'error':
-                console.error('Webview error:', message.payload);
-                break;
+                case 'select':
+                    this.handleClaimSelection(message.payload);
+                    break;
+
+                case 'error':
+                    this.handleWebviewError(message.payload);
+                    break;
+
+                default:
+                    console.warn('Unknown message command:', message.command);
+                    break;
+            }
+        } catch (error) {
+            console.error('Error handling webview message:', error);
         }
     }
 
@@ -160,7 +185,25 @@ export class TimelineRenderer {
                 'Selected ' + selectedClaim.type + ' claim: ' + selectedClaim.displayName,
                 { modal: false, detail: details }
             );
+        } else {
+            vscode.window.showWarningMessage(
+                'Selected claim not found: ' + claimId
+            );
         }
+    }
+
+    /**
+     * Handle error messages from webview
+     */
+    private handleWebviewError(errorPayload: any): void {
+        console.error('Webview error:', errorPayload);
+        
+        const message = errorPayload?.message || 'Unknown webview error';
+        vscode.window.showErrorMessage(
+            'Timeline Error: ' + message,
+            'Retry',
+            'Report Issue'
+        );
     }
 
     /**

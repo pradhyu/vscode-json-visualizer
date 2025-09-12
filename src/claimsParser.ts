@@ -444,12 +444,15 @@ export class ClaimsParser {
                 });
             }
 
-            // Ensure dates are Date objects
+            // Ensure dates are ISO strings
+            const startDate = claim.startDate instanceof Date ? claim.startDate : new Date(claim.startDate);
+            const endDate = claim.endDate instanceof Date ? claim.endDate : new Date(claim.endDate);
+            
             const standardizedClaim: ClaimItem = {
                 id: claim.id,
                 type: claim.type,
-                startDate: claim.startDate instanceof Date ? claim.startDate : new Date(claim.startDate),
-                endDate: claim.endDate instanceof Date ? claim.endDate : new Date(claim.endDate),
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
                 displayName: claim.displayName,
                 color: claim.color,
                 details: { ...claim.details }
