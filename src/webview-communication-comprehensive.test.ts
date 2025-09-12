@@ -48,14 +48,14 @@ describe('Comprehensive Webview Communication Tests - Requirement 2.4', () => {
             const sampleData = createTestTimelineData();
             renderer.createPanel(sampleData);
             
-            // Clear initial postMessage calls
-            vi.clearAllMocks();
-            
             // Verify message handler was registered
             expect(mockPanel.webview.onDidReceiveMessage).toHaveBeenCalled();
             
-            // Get message handler
+            // Get message handler before clearing mocks
             const messageHandler = (mockPanel.webview.onDidReceiveMessage as any).mock.calls[0][0];
+            
+            // Clear initial postMessage calls
+            vi.clearAllMocks();
             
             // Send ready message
             messageHandler({ command: 'ready' });

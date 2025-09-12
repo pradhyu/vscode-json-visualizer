@@ -51,11 +51,11 @@ describe('Webview Communication Tests', () => {
             // Verify message handler was registered
             expect(mockPanel.webview.onDidReceiveMessage).toHaveBeenCalled();
             
+            // Get message handler before clearing mocks
+            const messageHandler = (mockPanel.webview.onDidReceiveMessage as any).mock.calls[0][0];
+            
             // Clear initial postMessage calls
             vi.clearAllMocks();
-            
-            // Get message handler
-            const messageHandler = (mockPanel.webview.onDidReceiveMessage as any).mock.calls[0][0];
             
             // Send ready message
             messageHandler({ command: 'ready' });

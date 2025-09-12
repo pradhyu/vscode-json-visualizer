@@ -1,7 +1,22 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HybridParser } from './hybridParser';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Mock fs module properly
+vi.mock('fs', async (importOriginal) => {
+    const actual = await importOriginal<typeof fs>();
+    return {
+        ...actual,
+        existsSync: vi.fn(),
+        readFileSync: vi.fn(),
+        writeFileSync: vi.fn(),
+        promises: {
+            ...actual.promises,
+            readFile: vi.fn()
+        }
+    };
+});
 
 describe('HybridParser', () => {
     let hybridParser: HybridParser;
@@ -18,11 +33,13 @@ describe('HybridParser', () => {
     });
 
     it('should parse test-claims.json using fallback mechanism', async () => {
-        // Check if test file exists
-        if (!fs.existsSync(testFilePath)) {
-            console.log('test-claims.json not found, skipping test');
-            return;
-        }
+        // Mock file existence and content
+        (fs.existsSync as any).mockReturnValue(true);
+        (fs.promises.readFile as any).mockResolvedValue(JSON.stringify({
+            rxTba: [
+                { id: 'rx1', dos: '2024-01-15', medication: 'Test Med', dayssupply: 30 }
+            ]
+        }));
 
         const result = await hybridParser.parseFile(testFilePath);
         
@@ -50,10 +67,13 @@ describe('HybridParser', () => {
     });
 
     it('should determine parsing strategy', async () => {
-        if (!fs.existsSync(testFilePath)) {
-            console.log('test-claims.json not found, skipping test');
-            return;
-        }
+        // Mock file existence and content
+        (fs.existsSync as any).mockReturnValue(true);
+        (fs.promises.readFile as any).mockResolvedValue(JSON.stringify({
+            rxTba: [
+                { id: 'rx1', dos: '2024-01-15', medication: 'Test Med', dayssupply: 30 }
+            ]
+        }));
 
         const strategy = await hybridParser.getParsingStrategy(testFilePath);
         expect(strategy).toBeDefined();
@@ -67,17 +87,10 @@ describe('HybridParser', () => {
     });
 
     it('should handle malformed JSON gracefully', async () => {
-        // Create a temporary malformed JSON file
-        const tempPath = path.join(__dirname, 'temp-malformed.json');
-        fs.writeFileSync(tempPath, '{ invalid json }');
+        // Mock malformed JSON content
+        (fs.promises.readFile as any).mockResolvedValue('{ invalid json }');
         
-        try {
-            await expect(hybridParser.parseFile(tempPath)).rejects.toThrow();
-        } finally {
-            // Clean up
-            if (fs.existsSync(tempPath)) {
-                fs.unlinkSync(tempPath);
-            }
-        }
+        const tempPath = path.join(__dirname, 'temp-malformed.json');
+        await expect(hybridParser.parseFile(tempPath)).rejects.toThrow();
     });
 });

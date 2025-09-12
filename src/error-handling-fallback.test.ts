@@ -153,7 +153,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
 
                 try {
                     await parser.parseFile('/test/malformed.json');
-                    fail(`Expected error for ${testCase.description}`);
+                    throw new Error(`Expected error for ${testCase.description}`);
                 } catch (e) {
                     expect(e).toBeInstanceOf(ValidationError);
                     expect(e.message).toContain('Invalid JSON');
@@ -233,7 +233,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
 
                 try {
                     await parser.parseFile('/test/invalid.json');
-                    fail(`Expected error for ${testCase.description}`);
+                    throw new Error(`Expected error for ${testCase.description}`);
                 } catch (e) {
                     expect(e).toBeInstanceOf(StructureValidationError);
                     expect(e.message).toContain('does not contain valid medical claims data');
@@ -325,7 +325,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
 
                 try {
                     await parser.parseFile('/test/invalid-dates.json');
-                    fail(`Expected error for ${testCase.description}`);
+                    throw new Error(`Expected error for ${testCase.description}`);
                 } catch (e) {
                     expect(e).toBeInstanceOf(DateParseError);
                     expect(e.message).toContain(String(testCase.date));
@@ -353,9 +353,12 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
 
                 (fs.promises.readFile as any).mockResolvedValue(JSON.stringify(data));
 
+                await expect(parserWithFormat.parseFile('/test/invalid.json'))
+                    .rejects.toThrow();
+                
                 try {
                     await parserWithFormat.parseFile('/test/invalid.json');
-                    fail(`Expected error for format ${testCase.format}`);
+                    throw new Error(`Expected error for format ${testCase.format}`);
                 } catch (e) {
                     expect(e).toBeInstanceOf(DateParseError);
                     expect(e.expectedFormat).toBe(testCase.format);

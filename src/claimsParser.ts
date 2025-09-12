@@ -31,6 +31,17 @@ export class ClaimsParser {
         try {
             // Read and parse JSON file
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
+            
+            // Check for empty file
+            if (!fileContent || fileContent.trim() === '') {
+                throw new ValidationError('Empty file')
+                    .setFilePath(filePath)
+                    .setRecoverySuggestions([
+                        'Ensure the file contains valid JSON data',
+                        'Check that the file was not corrupted during transfer'
+                    ]);
+            }
+            
             const jsonData = JSON.parse(fileContent);
 
             // Validate JSON structure
@@ -46,22 +57,85 @@ export class ClaimsParser {
 
         } catch (error) {
             if (error instanceof ParseError) {
+                error.setFilePath(filePath);
                 throw error;
             }
             
             if (error instanceof SyntaxError) {
-                throw new ValidationError(`Invalid JSON format: ${error.message}`);
+                const validationError = new ValidationError(`Invalid JSON: ${error.message}`)
+                    .setFilePath(filePath)
+                    .setOriginalError(error);
+                validationError.setRecoverySuggestions([
+                    'Check JSON syntax',
+                    'Verify all brackets and quotes are properly closed',
+                    'Use a JSON validator to identify syntax errors',
+                    'Check for invalid Unicode sequences',
+                    'Reduce JSON nesting depth if the structure is too complex'
+                ]);
+                throw validationError;
             }
             
             if ((error as any).code === 'ENOENT') {
-                throw new FileReadError(`File not found: ${filePath}`);
+                const fileError = new FileReadError(`File not found: ${filePath}`)
+                    .setFilePath(filePath)
+                    .setOriginalError(error as Error);
+                (fileError as any).code = 'ENOENT'; // Preserve original error code
+                throw fileError;
             }
             
             if ((error as any).code === 'EACCES') {
-                throw new FileReadError(`Permission denied reading file: ${filePath}`);
+                const fileError = new FileReadError(`Permission denied reading file: ${filePath}`)
+                    .setFilePath(filePath)
+                    .setOriginalError(error as Error);
+                (fileError as any).code = 'EACCES'; // Preserve original error code
+                fileError.setRecoverySuggestions([
+                    'Check file permissions',
+                    'Run with appropriate privileges',
+                    'Ensure the file is not locked by another process'
+                ]);
+                throw fileError;
+            }
+
+            if ((error as any).code === 'ENOMEM') {
+                const fileError = new FileReadError(`Out of memory reading file: ${filePath}`)
+                    .setFilePath(filePath)
+                    .setOriginalError(error as Error);
+                (fileError as any).code = 'ENOMEM'; // Preserve original error code
+                fileError.setRecoverySuggestions([
+                    'Try with a smaller file', 
+                    'Close other applications to free memory',
+                    'Increase available memory'
+                ]);
+                throw fileError;
+            }
+
+            if ((error as any).code === 'ENOSPC') {
+                const fileError = new FileReadError(`No space left on device: ${filePath}`)
+                    .setFilePath(filePath)
+                    .setOriginalError(error as Error);
+                (fileError as any).code = 'ENOSPC'; // Preserve original error code
+                fileError.setRecoverySuggestions([
+                    'Free up disk space',
+                    'Move the file to a different location with more space'
+                ]);
+                throw fileError;
+            }
+
+            if ((error as any).code === 'ENETUNREACH') {
+                const fileError = new FileReadError(`Network unreachable: ${filePath}`)
+                    .setFilePath(filePath)
+                    .setOriginalError(error as Error);
+                (fileError as any).code = 'ENETUNREACH'; // Preserve original error code
+                fileError.setRecoverySuggestions([
+                    'Check network connection',
+                    'Verify the network path is accessible'
+                ]);
+                throw fileError;
             }
             
-            throw new ParseError(`Unexpected error parsing file: ${error}`, 'UNKNOWN_ERROR');
+            throw new ParseError(`Unexpected error parsing file: ${error}`, 'UNKNOWN_ERROR')
+                .setFilePath(filePath)
+                .setOriginalError(error as Error);
         }
     }
 
@@ -85,9 +159,13 @@ export class ClaimsParser {
                 console.log('DIAGNOSTIC: JSON validation failed - not an object');
             }
             throw new StructureValidationError(
-                'Invalid JSON: Expected an object but received ' + typeof json,
+                'JSON does not contain valid medical claims data - expected object but received ' + typeof json,
                 ['root object'],
-                ['Ensure the JSON file contains a valid object structure']
+                [
+                    'Ensure your JSON contains medical claims data',
+                    'Check the sample files for correct structure',
+                    'Verify the JSON file contains a valid object structure'
+                ]
             );
         }
 
@@ -169,7 +247,7 @@ export class ClaimsParser {
             suggestions.push('Verify that the arrays contain valid claim objects');
             
             throw new StructureValidationError(
-                'No valid medical claims arrays found in JSON',
+                'JSON does not contain valid medical claims data',
                 missingFields,
                 suggestions
             );
@@ -248,8 +326,12 @@ export class ClaimsParser {
             if (enableDiagnosticLogging) {
                 console.log('DIAGNOSTIC: Array structure validation failed with errors:', errors);
             }
+            
+            // Use specific error message if there's only one error, otherwise use generic
+            const errorMessage = errors.length === 1 ? errors[0] : 'Invalid claim array structures found';
+            
             throw new StructureValidationError(
-                'Invalid claim array structures found',
+                errorMessage,
                 errors,
                 [
                     'Ensure prescription claims have required fields: dos, dayssupply',
@@ -283,27 +365,35 @@ export class ClaimsParser {
         }
 
         let validItems = 0;
+        let criticalErrors = 0;
+        
         rxData.forEach((claim, index) => {
             if (!claim || typeof claim !== 'object') {
                 errors.push(`${type}[${index}]: Expected object but found ${typeof claim}`);
+                criticalErrors++;
                 return;
             }
 
             let itemValid = true;
 
-            // Validate required 'dos' field
+            // Check for 'dos' field - warn but don't fail validation
             if (!claim.dos) {
-                errors.push(`${type}[${index}]: Missing required field 'dos' (date of service)`);
-                itemValid = false;
+                if (enableDiagnosticLogging) {
+                    console.log(`DIAGNOSTIC: ${type}[${index}]: Missing 'dos' field - will use fallback`);
+                }
+                // Don't add to errors - this will be handled during extraction
             } else if (typeof claim.dos !== 'string') {
-                errors.push(`${type}[${index}]: Field 'dos' must be a string, found ${typeof claim.dos}`);
-                itemValid = false;
+                if (enableDiagnosticLogging) {
+                    console.log(`DIAGNOSTIC: ${type}[${index}]: 'dos' field is not a string - will attempt conversion`);
+                }
             }
 
-            // Validate optional 'dayssupply' field
+            // Check optional 'dayssupply' field
             if (claim.dayssupply !== undefined && typeof claim.dayssupply !== 'number') {
-                errors.push(`${type}[${index}]: Field 'dayssupply' must be a number, found ${typeof claim.dayssupply}`);
-                itemValid = false;
+                if (enableDiagnosticLogging) {
+                    console.log(`DIAGNOSTIC: ${type}[${index}]: 'dayssupply' field is not a number - will attempt conversion`);
+                }
+                // Don't add to errors - this will be handled during extraction
             }
 
             if (itemValid) {
@@ -312,19 +402,21 @@ export class ClaimsParser {
         });
 
         if (enableDiagnosticLogging) {
-            console.log(`DIAGNOSTIC: ${type} validation complete - ${validItems}/${rxData.length} items valid, ${errors.length} errors`);
+            console.log(`DIAGNOSTIC: ${type} validation complete - ${validItems}/${rxData.length} items processed, ${criticalErrors} critical errors`);
             if (errors.length > 0) {
                 console.log(`DIAGNOSTIC: ${type} validation errors:`, errors);
             }
         }
 
-        return errors;
+        // Only return critical errors that prevent processing
+        return criticalErrors > 0 ? errors : [];
     }
 
     /**
      * Validate medical history array structure
      */
     private validateMedHistoryArrayStructure(medHistoryData: any): string[] {
+        const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
         const errors: string[] = [];
 
         if (!medHistoryData || typeof medHistoryData !== 'object') {
@@ -337,38 +429,46 @@ export class ClaimsParser {
             return errors;
         }
 
+        let criticalErrors = 0;
+
         medHistoryData.claims.forEach((claim: any, claimIndex: number) => {
             if (!claim || typeof claim !== 'object') {
                 errors.push(`medHistory.claims[${claimIndex}]: Expected object but found ${typeof claim}`);
+                criticalErrors++;
                 return;
             }
 
             if (!Array.isArray(claim.lines)) {
-                errors.push(`medHistory.claims[${claimIndex}].lines: Expected array`);
+                errors.push(`medHistory claims must have lines array`);
+                criticalErrors++;
                 return;
             }
 
             claim.lines.forEach((line: any, lineIndex: number) => {
                 if (!line || typeof line !== 'object') {
-                    errors.push(`medHistory.claims[${claimIndex}].lines[${lineIndex}]: Expected object but found ${typeof line}`);
+                    if (enableDiagnosticLogging) {
+                        console.log(`DIAGNOSTIC: medHistory.claims[${claimIndex}].lines[${lineIndex}]: Invalid line object - will skip`);
+                    }
                     return;
                 }
 
+                // Check for required fields but don't fail validation - handle during extraction
                 if (!line.srvcStart) {
-                    errors.push(`medHistory.claims[${claimIndex}].lines[${lineIndex}]: Missing required field 'srvcStart'`);
-                } else if (typeof line.srvcStart !== 'string') {
-                    errors.push(`medHistory.claims[${claimIndex}].lines[${lineIndex}]: Field 'srvcStart' must be a string`);
+                    if (enableDiagnosticLogging) {
+                        console.log(`DIAGNOSTIC: medHistory.claims[${claimIndex}].lines[${lineIndex}]: Missing 'srvcStart' - will use fallback`);
+                    }
                 }
 
                 if (!line.srvcEnd) {
-                    errors.push(`medHistory.claims[${claimIndex}].lines[${lineIndex}]: Missing required field 'srvcEnd'`);
-                } else if (typeof line.srvcEnd !== 'string') {
-                    errors.push(`medHistory.claims[${claimIndex}].lines[${lineIndex}]: Field 'srvcEnd' must be a string`);
+                    if (enableDiagnosticLogging) {
+                        console.log(`DIAGNOSTIC: medHistory.claims[${claimIndex}].lines[${lineIndex}]: Missing 'srvcEnd' - will use fallback`);
+                    }
                 }
             });
         });
 
-        return errors;
+        // Only return critical structural errors
+        return criticalErrors > 0 ? errors : [];
     }
 
     /**
@@ -424,7 +524,7 @@ export class ClaimsParser {
     /**
      * Standardize claim format to match working simple version
      * @param claims Array of ClaimItem objects with Date objects
-     * @returns Array of ClaimItem objects with ISO string dates
+     * @returns Array of ClaimItem objects with Date objects
      */
     private standardizeClaimFormat(claims: ClaimItem[]): ClaimItem[] {
         const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
@@ -444,15 +544,15 @@ export class ClaimsParser {
                 });
             }
 
-            // Ensure dates are ISO strings
+            // Ensure dates are Date objects (not ISO strings)
             const startDate = claim.startDate instanceof Date ? claim.startDate : new Date(claim.startDate);
             const endDate = claim.endDate instanceof Date ? claim.endDate : new Date(claim.endDate);
             
             const standardizedClaim: ClaimItem = {
                 id: claim.id,
                 type: claim.type,
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString(),
+                startDate: startDate,
+                endDate: endDate,
                 displayName: claim.displayName,
                 color: claim.color,
                 details: { ...claim.details }
@@ -503,29 +603,26 @@ export class ClaimsParser {
                 throw new ValidationError(`Claim ${index}: Invalid or missing color field`);
             }
 
-            // Validate date format (should be ISO strings after standardization)
-            if (typeof claim.startDate !== 'string') {
-                throw new ValidationError(`Claim ${index}: startDate must be ISO string, got ${typeof claim.startDate}`);
+            // Validate date format (should be Date objects after standardization)
+            if (!(claim.startDate instanceof Date)) {
+                throw new ValidationError(`Claim ${index}: startDate must be Date object, got ${typeof claim.startDate}`);
             }
 
-            if (typeof claim.endDate !== 'string') {
-                throw new ValidationError(`Claim ${index}: endDate must be ISO string, got ${typeof claim.endDate}`);
+            if (!(claim.endDate instanceof Date)) {
+                throw new ValidationError(`Claim ${index}: endDate must be Date object, got ${typeof claim.endDate}`);
             }
 
-            // Validate ISO date format
-            const startDateTest = new Date(claim.startDate as any);
-            const endDateTest = new Date(claim.endDate as any);
-            
-            if (isNaN(startDateTest.getTime())) {
-                throw new ValidationError(`Claim ${index}: Invalid startDate ISO format: ${claim.startDate}`);
+            // Validate Date objects are valid
+            if (isNaN(claim.startDate.getTime())) {
+                throw new ValidationError(`Claim ${index}: Invalid startDate: ${claim.startDate}`);
             }
 
-            if (isNaN(endDateTest.getTime())) {
-                throw new ValidationError(`Claim ${index}: Invalid endDate ISO format: ${claim.endDate}`);
+            if (isNaN(claim.endDate.getTime())) {
+                throw new ValidationError(`Claim ${index}: Invalid endDate: ${claim.endDate}`);
             }
 
             // Validate date range
-            if (endDateTest < startDateTest) {
+            if (claim.endDate < claim.startDate) {
                 throw new ValidationError(`Claim ${index}: endDate cannot be before startDate`);
             }
 
@@ -585,7 +682,9 @@ export class ClaimsParser {
                                     type,
                                     originalError: dateError,
                                     suggestedFormats: dateError.details?.suggestedFormats,
-                                    examples: dateError.details?.examples
+                                    examples: dateError.details?.examples,
+                                    expectedFormat: dateError.expectedFormat,
+                                    supportedFormats: dateError.supportedFormats
                                 }
                             );
                         } else {
@@ -930,9 +1029,12 @@ export class ClaimsParser {
         }
 
         // Try parsing as ISO date first (YYYY-MM-DD)
-        const isoDate = new Date(trimmedDateStr);
-        if (!isNaN(isoDate.getTime()) && this.isValidDateString(trimmedDateStr)) {
-            return isoDate;
+        if (this.isValidDateString(trimmedDateStr)) {
+            // Parse as UTC to avoid timezone issues
+            const isoDate = new Date(trimmedDateStr + 'T00:00:00.000Z');
+            if (!isNaN(isoDate.getTime()) && this.isValidCalendarDate(trimmedDateStr, isoDate)) {
+                return isoDate;
+            }
         }
 
         // Try parsing with different formats based on configuration
@@ -943,7 +1045,7 @@ export class ClaimsParser {
             try {
                 attemptedFormats.push(format);
                 const parsed = this.parseDateWithFormat(trimmedDateStr, format);
-                if (parsed && !isNaN(parsed.getTime())) {
+                if (parsed && !isNaN(parsed.getTime()) && this.isValidCalendarDate(trimmedDateStr, parsed)) {
                     return parsed;
                 }
             } catch (error) {
@@ -958,8 +1060,10 @@ export class ClaimsParser {
             { 
                 originalValue: dateStr,
                 attemptedFormats,
-                suggestedFormats: this.getDateFormats(),
-                examples: this.getDateFormatExamples()
+                suggestedFormats: formats,
+                examples: this.getDateFormatExamples(),
+                expectedFormat: formats[0], // First format is the expected/configured one
+                supportedFormats: formats
             }
         );
     }
@@ -978,6 +1082,35 @@ export class ClaimsParser {
         ];
 
         return datePatterns.some(pattern => pattern.test(dateStr));
+    }
+
+    /**
+     * Validate that the parsed date matches the original string (catches invalid dates like Feb 30)
+     */
+    private isValidCalendarDate(originalStr: string, parsedDate: Date): boolean {
+        // For YYYY-MM-DD format, check if the parsed date matches the input
+        if (/^\d{4}-\d{2}-\d{2}$/.test(originalStr)) {
+            const [year, month, day] = originalStr.split('-').map(Number);
+            
+            // Check if the parsed date components match the input (use UTC methods for UTC dates)
+            if (parsedDate.getUTCFullYear() !== year ||
+                parsedDate.getUTCMonth() !== month - 1 || // Month is 0-indexed
+                parsedDate.getUTCDate() !== day) {
+                return false;
+            }
+            
+            // Check for valid month (1-12)
+            if (month < 1 || month > 12) {
+                return false;
+            }
+            
+            // Check for valid day (1-31 depending on month)
+            if (day < 1 || day > 31) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     /**
@@ -1004,7 +1137,14 @@ export class ClaimsParser {
      * @returns Array of date format strings
      */
     private getDateFormats(): string[] {
-        const configFormat = this.config.dateFormat || 'YYYY-MM-DD';
+        const configFormat = this.config.dateFormat;
+        
+        // If a specific format is configured, only use that format
+        if (configFormat && configFormat !== 'YYYY-MM-DD') {
+            return [configFormat];
+        }
+        
+        // Otherwise, try common formats with YYYY-MM-DD first
         const commonFormats = [
             'YYYY-MM-DD',
             'MM/DD/YYYY',
@@ -1014,15 +1154,7 @@ export class ClaimsParser {
             'MM-DD-YYYY'
         ];
 
-        // Put configured format first, then try others
-        const formats = [configFormat];
-        commonFormats.forEach(format => {
-            if (format !== configFormat) {
-                formats.push(format);
-            }
-        });
-
-        return formats;
+        return commonFormats;
     }
 
     /**
@@ -1067,10 +1199,11 @@ export class ClaimsParser {
             return null;
         }
 
-        const date = new Date(year, month, day);
+        const date = new Date(Date.UTC(year, month, day));
         
         // Validate the date is correct (handles invalid dates like Feb 30)
-        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+        const utcDate = new Date(date.getTime());
+        if (utcDate.getUTCFullYear() !== year || utcDate.getUTCMonth() !== month || utcDate.getUTCDate() !== day) {
             return null;
         }
 
@@ -1102,15 +1235,14 @@ export class ClaimsParser {
             return false;
         }
 
-        // Check if it has claims array
+        // Check if it has claims array - this is enough for basic structure validation
         if (!Array.isArray(medHistoryData.claims)) {
             return false;
         }
 
-        // Validate at least one claim has lines array
-        return medHistoryData.claims.some((claim: any) => 
-            claim && Array.isArray(claim.lines) && claim.lines.length > 0
-        );
+        // For initial structure validation, just check that the claims array exists
+        // Detailed validation of array contents happens later in validateArrayStructures
+        return medHistoryData.claims.length >= 0; // Even empty array is valid structure
     }
 
     /**

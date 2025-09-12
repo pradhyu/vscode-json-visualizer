@@ -204,33 +204,102 @@ export interface MedHistoryData {
  * Error types for parsing operations
  */
 export class ParseError extends Error {
+    public filePath?: string;
+    public timestamp?: Date;
+    public originalError?: Error;
+    public recoverySuggestions?: string[];
+    public context?: any;
+
     constructor(message: string, public readonly code: string, public readonly details?: any) {
         super(message);
         this.name = 'ParseError';
+        this.timestamp = new Date();
+    }
+
+    setFilePath(filePath: string): this {
+        this.filePath = filePath;
+        return this;
+    }
+
+    setOriginalError(error: Error): this {
+        this.originalError = error;
+        if (error.stack) {
+            this.stack = error.stack;
+        }
+        return this;
+    }
+
+    setRecoverySuggestions(suggestions: string[]): this {
+        this.recoverySuggestions = suggestions;
+        return this;
+    }
+
+    setContext(context: any): this {
+        this.context = context;
+        return this;
     }
 }
 
 export class ValidationError extends ParseError {
     constructor(message: string, details?: any) {
         super(message, 'VALIDATION_ERROR', details);
+        this.recoverySuggestions = [
+            'Check JSON syntax and structure',
+            'Verify the file contains valid medical claims data',
+            'Ensure all required fields are present'
+        ];
     }
 }
 
 export class DateParseError extends ParseError {
+    public expectedFormat?: string;
+    public supportedFormats?: string[];
+
     constructor(message: string, details?: any) {
         super(message, 'DATE_PARSE_ERROR', details);
+        this.expectedFormat = details?.expectedFormat || 'YYYY-MM-DD';
+        this.supportedFormats = details?.supportedFormats || [
+            'YYYY-MM-DD',
+            'MM/DD/YYYY', 
+            'DD-MM-YYYY',
+            'YYYY/MM/DD',
+            'DD/MM/YYYY',
+            'MM-DD-YYYY'
+        ];
+        this.recoverySuggestions = [
+            `Use the format: ${this.expectedFormat}`,
+            'Check your date values',
+            'Ensure dates are valid calendar dates'
+        ];
     }
 }
 
 export class FileReadError extends ParseError {
     constructor(message: string, details?: any) {
         super(message, 'FILE_READ_ERROR', details);
+        this.recoverySuggestions = [
+            'Check if the file path is correct',
+            'Verify the file exists',
+            'Ensure you have read permissions'
+        ];
     }
 }
 
 export class StructureValidationError extends ValidationError {
+    public expectedStructure?: string;
+
     constructor(message: string, public readonly missingFields: string[], public readonly suggestions: string[]) {
         super(message, { missingFields, suggestions });
+        this.expectedStructure = 'Expected structure:\n' +
+            '• rxTba: array of prescription claims\n' +
+            '• rxHistory: array of prescription history\n' +
+            '• medHistory: object with claims array';
+        this.recoverySuggestions = [
+            'Ensure your JSON contains medical claims data',
+            'Check the sample files for correct structure',
+            'Verify that arrays contain valid claim objects',
+            ...suggestions // Include the specific suggestions passed in
+        ];
     }
 }
 
