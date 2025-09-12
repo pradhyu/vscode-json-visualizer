@@ -28,33 +28,84 @@ export class HybridParser {
 
         const flexibleConfig: ParserConfig = {
             globalDateFormat: 'YYYY-MM-DD',
-            claimTypes: [{
-                name: 'rxTba',
-                arrayPath: 'rxTba',
-                color: '#FF6B6B',
-                idField: {
-                    path: 'id',
-                    defaultValue: 'auto-generated'
+            claimTypes: [
+                {
+                    name: 'rxTba',
+                    arrayPath: 'rxTba',
+                    color: '#FF6B6B',
+                    idField: {
+                        path: 'id',
+                        defaultValue: 'auto-generated'
+                    },
+                    startDate: {
+                        type: 'field',
+                        field: 'dos'
+                    },
+                    endDate: {
+                        type: 'calculation',
+                        calculation: {
+                            baseField: 'dos',
+                            operation: 'add',
+                            value: 'dayssupply',
+                            unit: 'days'
+                        }
+                    },
+                    displayName: {
+                        path: 'medication',
+                        defaultValue: 'Unknown Medication'
+                    },
+                    displayFields: []
                 },
-                startDate: {
-                    type: 'field',
-                    field: 'dos'
+                {
+                    name: 'rxHistory',
+                    arrayPath: 'rxHistory',
+                    color: '#4ECDC4',
+                    idField: {
+                        path: 'id',
+                        defaultValue: 'auto-generated'
+                    },
+                    startDate: {
+                        type: 'field',
+                        field: 'dos'
+                    },
+                    endDate: {
+                        type: 'calculation',
+                        calculation: {
+                            baseField: 'dos',
+                            operation: 'add',
+                            value: 'dayssupply',
+                            unit: 'days'
+                        }
+                    },
+                    displayName: {
+                        path: 'medication',
+                        defaultValue: 'Unknown Medication'
+                    },
+                    displayFields: []
                 },
-                endDate: {
-                    type: 'calculation',
-                    calculation: {
-                        baseField: 'dos',
-                        operation: 'add',
-                        value: 'dayssupply',
-                        unit: 'days'
-                    }
-                },
-                displayName: {
-                    path: 'medication',
-                    defaultValue: 'Unknown Medication'
-                },
-                displayFields: []
-            }]
+                {
+                    name: 'medHistory',
+                    arrayPath: 'medHistory.claims',
+                    color: '#45B7D1',
+                    idField: {
+                        path: 'lines[0].lineId',
+                        defaultValue: 'auto-generated'
+                    },
+                    startDate: {
+                        type: 'field',
+                        field: 'lines[0].srvcStart'
+                    },
+                    endDate: {
+                        type: 'field',
+                        field: 'lines[0].srvcEnd'
+                    },
+                    displayName: {
+                        path: 'lines[0].description',
+                        defaultValue: 'Medical Service'
+                    },
+                    displayFields: []
+                }
+            ]
         };
 
         this.complexParser = new ClaimsParser(defaultConfig);

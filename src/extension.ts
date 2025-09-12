@@ -9,9 +9,9 @@ export function activate(context: vscode.ExtensionContext) {
     // Register comprehensive diagnostic command
     const diagnosticDisposable = vscode.commands.registerCommand('claimsTimeline.diagnose', async (uri?: vscode.Uri) => {
         console.log('=== DIAGNOSTIC COMMAND: Starting comprehensive diagnostic ===');
-        
+
         const fileUri = uri || vscode.window.activeTextEditor?.document.uri;
-        
+
         if (!fileUri) {
             vscode.window.showErrorMessage('No JSON file selected for diagnosis');
             return;
@@ -19,13 +19,13 @@ export function activate(context: vscode.ExtensionContext) {
 
         try {
             console.log('DIAGNOSTIC: Running comprehensive diagnostic test on:', fileUri.fsPath);
-            
+
             // Run the comprehensive diagnostic test
             const result = await DiagnosticTest.runDiagnostic(fileUri.fsPath);
-            
+
             console.log('DIAGNOSTIC: Comprehensive test completed');
             console.log('DIAGNOSTIC: Results:', result);
-            
+
             // Format results for display
             const summary = [
                 `File: ${result.filePath}`,
@@ -37,22 +37,22 @@ export function activate(context: vscode.ExtensionContext) {
                 `• Flexible Parser: ${result.flexibleParserResult?.success ? '✓ SUCCESS' : '✗ FAILED'}`,
                 '',
                 'Data Structure Differences:',
-                ...result.dataStructureDifferences.map(diff => 
+                ...result.dataStructureDifferences.map(diff =>
                     `• ${diff.field}: ${diff.parser1}≠${diff.parser2} (${diff.impact})`
                 ),
                 '',
                 'Recommendations:',
                 ...result.recommendations.map(rec => `• ${rec}`)
             ].join('\n');
-            
+
             // Show results in a new document
             const doc = await vscode.workspace.openTextDocument({
                 content: summary,
                 language: 'plaintext'
             });
-            
+
             await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
-            
+
             vscode.window.showInformationMessage(
                 `Diagnostic complete. ${result.dataStructureDifferences.length} differences found.`,
                 'View Details'
@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.commands.executeCommand('workbench.action.output.toggleOutput');
                 }
             });
-            
+
         } catch (error) {
             console.error('DIAGNOSTIC: Error during comprehensive diagnosis:', error);
             vscode.window.showErrorMessage(`Diagnostic Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -71,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand('claimsTimeline.viewTimeline', async (uri?: vscode.Uri) => {
         console.log('=== HYBRID PARSER: claimsTimeline.viewTimeline command started ===');
         console.log('Command triggered with URI:', uri?.fsPath || 'no URI provided');
-        
+
         const fileUri = uri || vscode.window.activeTextEditor?.document.uri;
         console.log('Resolved file URI:', fileUri?.fsPath || 'no file URI available');
 
@@ -83,21 +83,21 @@ export function activate(context: vscode.ExtensionContext) {
 
         try {
             console.log('HYBRID PARSER: Starting hybrid parsing approach for:', fileUri.fsPath);
-            
+
             // Use hybrid parser for robust parsing with fallback
             const hybridParser = new HybridParser();
             const timelineData = await hybridParser.parseFile(fileUri.fsPath);
-            
+
             console.log(`HYBRID PARSER: Parsing successful with ${timelineData.claims.length} claims`);
             console.log('HYBRID PARSER: Date range:', {
                 start: timelineData.dateRange.start.toISOString(),
                 end: timelineData.dateRange.end.toISOString()
             });
-            
+
             // Determine which parsing strategy was used
             const strategy = await hybridParser.getParsingStrategy(fileUri.fsPath);
             console.log(`HYBRID PARSER: Used parsing strategy: ${strategy}`);
-            
+
             if (strategy === 'simple') {
                 vscode.window.showInformationMessage(
                     'Timeline created using fallback parsing. Some advanced features may be limited.',
@@ -112,11 +112,11 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             console.log('HYBRID PARSER: Creating timeline renderer');
-            
+
             // Use TimelineRenderer for advanced webview management
             const renderer = new TimelineRenderer(context);
             await renderer.createTimeline(timelineData);
-            
+
             console.log('HYBRID PARSER: Timeline renderer created successfully');
 
         } catch (error) {
@@ -127,7 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
                 type: typeof error,
                 fileUri: fileUri?.fsPath
             });
-            
+
             // Show user-friendly error message
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             vscode.window.showErrorMessage(`Timeline Error: ${errorMessage}`, 'Show Details').then(selection => {
@@ -136,16 +136,16 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             });
         }
-        
+
         console.log('=== HYBRID PARSER: claimsTimeline.viewTimeline command completed ===');
     });
 
     // Register test parsing command
     const testParsingDisposable = vscode.commands.registerCommand('claimsTimeline.testParsing', async (uri?: vscode.Uri) => {
         console.log('=== TEST PARSING COMMAND: Starting parsing test ===');
-        
+
         const fileUri = uri || vscode.window.activeTextEditor?.document.uri;
-        
+
         if (!fileUri) {
             vscode.window.showErrorMessage('No JSON file selected for parsing test');
             return;
@@ -153,24 +153,24 @@ export function activate(context: vscode.ExtensionContext) {
 
         try {
             console.log('TEST PARSING: Testing parsing capabilities on:', fileUri.fsPath);
-            
+
             // Test hybrid parser parsing strategies
             const hybridParser = new HybridParser();
-            
+
             // Get which strategy would be used
             const strategy = await hybridParser.getParsingStrategy(fileUri.fsPath);
             console.log(`TEST PARSING: Optimal parsing strategy: ${strategy}`);
-            
+
             // Attempt to parse with hybrid parser
             const timelineData = await hybridParser.parseFile(fileUri.fsPath);
-            
+
             console.log('TEST PARSING: Parsing successful');
             console.log(`TEST PARSING: Claims found: ${timelineData.claims.length}`);
             console.log('TEST PARSING: Date range:', {
                 start: timelineData.dateRange.start.toISOString(),
                 end: timelineData.dateRange.end.toISOString()
             });
-            
+
             // Format results for display
             const summary = [
                 `Parsing Test Results for: ${fileUri.fsPath}`,
@@ -181,22 +181,22 @@ export function activate(context: vscode.ExtensionContext) {
                 `✓ Claim Types: ${timelineData.metadata.claimTypes.join(', ')}`,
                 '',
                 'Sample Claims:',
-                ...timelineData.claims.slice(0, 3).map((claim, index) => 
+                ...timelineData.claims.slice(0, 3).map((claim, index) =>
                     `${index + 1}. ${claim.displayName} (${claim.startDate.toLocaleDateString()} - ${claim.endDate.toLocaleDateString()})`
                 ),
                 timelineData.claims.length > 3 ? `... and ${timelineData.claims.length - 3} more claims` : '',
                 '',
                 'Status: ✅ PARSING SUCCESSFUL'
             ].filter(line => line !== '').join('\n');
-            
+
             // Show results in a new document
             const doc = await vscode.workspace.openTextDocument({
                 content: summary,
                 language: 'plaintext'
             });
-            
+
             await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
-            
+
             vscode.window.showInformationMessage(
                 `Parsing test successful! Found ${timelineData.claims.length} claims using ${strategy} strategy.`,
                 'View Timeline'
@@ -205,10 +205,10 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.commands.executeCommand('claimsTimeline.viewTimeline', fileUri);
                 }
             });
-            
+
         } catch (error) {
             console.error('TEST PARSING: Error during parsing test:', error);
-            
+
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             const summary = [
                 `Parsing Test Results for: ${fileUri.fsPath}`,
@@ -225,15 +225,15 @@ export function activate(context: vscode.ExtensionContext) {
                 '',
                 'Status: ❌ PARSING FAILED'
             ].join('\n');
-            
+
             // Show error results in a new document
             const doc = await vscode.workspace.openTextDocument({
                 content: summary,
                 language: 'plaintext'
             });
-            
+
             await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
-            
+
             vscode.window.showErrorMessage(
                 `Parsing test failed: ${errorMessage}`,
                 'Run Full Diagnostic'
@@ -243,16 +243,16 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             });
         }
-        
+
         console.log('=== TEST PARSING COMMAND: Completed ===');
     });
 
     // Register debug info command
     const debugInfoDisposable = vscode.commands.registerCommand('claimsTimeline.showDebugInfo', async (uri?: vscode.Uri) => {
         console.log('=== DEBUG INFO COMMAND: Starting debug info collection ===');
-        
+
         const fileUri = uri || vscode.window.activeTextEditor?.document.uri;
-        
+
         try {
             // Collect system information
             const systemInfo = {
@@ -263,9 +263,9 @@ export function activate(context: vscode.ExtensionContext) {
                 workspaceFolder: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || 'none',
                 activeFile: fileUri?.fsPath || 'none'
             };
-            
+
             console.log('DEBUG INFO: System information collected:', systemInfo);
-            
+
             // Collect file information if available
             let fileInfo = {};
             if (fileUri) {
@@ -273,7 +273,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const stat = await vscode.workspace.fs.stat(fileUri);
                     const content = await vscode.workspace.fs.readFile(fileUri);
                     const contentStr = Buffer.from(content).toString('utf8');
-                    
+
                     let jsonData = null;
                     let jsonValid = false;
                     try {
@@ -282,7 +282,7 @@ export function activate(context: vscode.ExtensionContext) {
                     } catch {
                         jsonValid = false;
                     }
-                    
+
                     fileInfo = {
                         path: fileUri.fsPath,
                         size: stat.size,
@@ -293,7 +293,7 @@ export function activate(context: vscode.ExtensionContext) {
                         rxHistoryCount: jsonValid && jsonData?.rxHistory ? jsonData.rxHistory.length : 'N/A',
                         medHistoryCount: jsonValid && jsonData?.medHistory ? jsonData.medHistory.length : 'N/A'
                     };
-                    
+
                     console.log('DEBUG INFO: File information collected:', fileInfo);
                 } catch (error) {
                     fileInfo = {
@@ -302,7 +302,7 @@ export function activate(context: vscode.ExtensionContext) {
                     };
                 }
             }
-            
+
             // Collect extension configuration
             const config = vscode.workspace.getConfiguration('claimsTimeline');
             const configInfo = {
@@ -311,13 +311,13 @@ export function activate(context: vscode.ExtensionContext) {
                 customColors: config.get('customColors', {}),
                 parserTimeout: config.get('parserTimeout', 30000)
             };
-            
+
             console.log('DEBUG INFO: Configuration collected:', configInfo);
-            
+
             // Format debug information
             const debugInfo = [
                 'Medical Claims Timeline Extension - Debug Information',
-                '=' .repeat(60),
+                '='.repeat(60),
                 '',
                 'System Information:',
                 `• Platform: ${systemInfo.platform}`,
@@ -360,15 +360,15 @@ export function activate(context: vscode.ExtensionContext) {
                 '',
                 `Generated: ${new Date().toISOString()}`
             ].join('\n');
-            
+
             // Show debug info in a new document
             const doc = await vscode.workspace.openTextDocument({
                 content: debugInfo,
                 language: 'plaintext'
             });
-            
+
             await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
-            
+
             vscode.window.showInformationMessage(
                 'Debug information collected and displayed.',
                 'Copy to Clipboard'
@@ -378,12 +378,12 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.window.showInformationMessage('Debug information copied to clipboard');
                 }
             });
-            
+
         } catch (error) {
             console.error('DEBUG INFO: Error collecting debug information:', error);
             vscode.window.showErrorMessage(`Debug info error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-        
+
         console.log('=== DEBUG INFO COMMAND: Completed ===');
     });
 
