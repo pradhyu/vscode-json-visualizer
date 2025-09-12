@@ -1,0 +1,131 @@
+{
+  "patient": {
+    "id": "PAT12345",
+    "name": "[Patient Name]",
+    "dateOfBirth": "1975-06-15",
+    "medications": [
+      {
+        "prescriptionId": "RX001",
+        "drugName": "Lisinopril 10mg",
+        "strength": "10mg",
+        "startDate": "2024-01-15",
+        "daysSupply": 30,
+        "prescriber": {
+          "name": "Dr. Smith",
+          "npi": "1234567890"
+        },
+        "pharmacy": "CVS Pharmacy #1234",
+        "cost": 15.00,
+        "instructions": "Take once daily with food"
+      },
+      {
+        "prescriptionId": "RX002",
+        "drugName": "Metformin 500mg",
+        "strength": "500mg",
+        "startDate": "2024-01-20",
+        "daysSupply": 90,
+        "prescriber": {
+          "name": "Dr. Johnson",
+          "npi": "0987654321"
+        },
+        "pharmacy": "Walgreens #5678",
+        "cost": 25.50,
+        "instructions": "Take twice daily with meals"
+      },
+      {
+        "prescriptionId": "RX003",
+        "drugName": "Amoxicillin 250mg",
+        "strength": "250mg",
+        "startDate": "2024-02-01",
+        "daysSupply": 10,
+        "prescriber": {
+          "name": "Dr. Williams",
+          "npi": "1122334455"
+        },
+        "pharmacy": "CVS Pharmacy #1234",
+        "cost": 12.00,
+        "instructions": "Take three times daily"
+      }
+    ],
+    "appointments": [
+      {
+        "appointmentId": "APT001",
+        "appointmentDate": "2024-01-10",
+        "appointmentType": "Annual Physical",
+        "provider": {
+          "name": "Dr. Smith",
+          "specialty": "Internal Medicine"
+        },
+        "durationMinutes": 60,
+        "status": "Completed",
+        "location": "Main Clinic"
+      },
+      {
+        "appointmentId": "APT002",
+        "appointmentDate": "2024-01-25",
+        "appointmentType": "Follow-up",
+        "provider": {
+          "name": "Dr. Johnson",
+          "specialty": "Endocrinology"
+        },
+        "durationMinutes": 30,
+        "status": "Completed",
+        "location": "Specialty Clinic"
+      },
+      {
+        "appointmentId": "APT003",
+        "appointmentDate": "2024-02-15",
+        "appointmentType": "Urgent Care",
+        "provider": {
+          "name": "Dr. Williams",
+          "specialty": "Family Medicine"
+        },
+        "durationMinutes": 45,
+        "status": "Completed",
+        "location": "Urgent Care Center"
+      }
+    ],
+    "labResults": [
+      {
+        "testId": "LAB001",
+        "testName": "Complete Blood Count",
+        "collectionDate": "2024-01-08",
+        "resultDate": "2024-01-09",
+        "result": "Normal",
+        "referenceRange": "Within normal limits",
+        "status": "Final",
+        "orderedBy": "Dr. Smith"
+      },
+      {
+        "testId": "LAB002",
+        "testName": "Hemoglobin A1C",
+        "collectionDate": "2024-01-08",
+        "resultDate": "2024-01-09",
+        "result": "6.8%",
+        "referenceRange": "<7.0%",
+        "status": "Final",
+        "orderedBy": "Dr. Johnson"
+      },
+      {
+        "testId": "LAB003",
+        "testName": "Lipid Panel",
+        "collectionDate": "2024-01-22",
+        "resultDate": "2024-01-23",
+        "result": "Elevated cholesterol",
+        "referenceRange": "Total <200 mg/dL",
+        "status": "Final",
+        "orderedBy": "Dr. Smith"
+      },
+      {
+        "testId": "LAB004",
+        "testName": "Throat Culture",
+        "collectionDate": "2024-02-01",
+        "resultDate": "2024-02-03",
+        "result": "Positive for Strep A",
+        "referenceRange": "Negative",
+        "status": "Final",
+        "orderedBy": "Dr. Williams"
+      }
+    ]
+  }
+}

@@ -7,12 +7,131 @@
  */
 export interface ClaimItem {
     id: string;
-    type: 'rxTba' | 'rxHistory' | 'medHistory';
-    startDate: Date;
-    endDate: Date;
+    type: string; // Now flexible instead of fixed enum
+    startDate: Date; // Always Date objects internally
+    endDate: Date;   // Always Date objects internally
     details: Record<string, any>;
     displayName: string;
     color: string;
+}
+
+/**
+ * Serialized version of ClaimItem for JSON/webview communication
+ */
+export interface SerializedClaimItem {
+    id: string;
+    type: string;
+    startDate: string; // ISO string format
+    endDate: string;   // ISO string format
+    details: Record<string, any>;
+    displayName: string;
+    color: string;
+}
+
+/**
+ * Configuration for a custom claim type
+ */
+export interface ClaimTypeConfig {
+    /** Name/key of the claim type */
+    name: string;
+    /** JSON path to the array containing claims of this type */
+    arrayPath: string;
+    /** Color for this claim type in timeline */
+    color: string;
+    /** Configuration for ID field */
+    idField: FieldConfig;
+    /** Configuration for start date */
+    startDate: DateFieldConfig;
+    /** Configuration for end date */
+    endDate: DateFieldConfig;
+    /** Configuration for display name */
+    displayName: FieldConfig;
+    /** Fields to show in tooltips and detail panels */
+    displayFields: DisplayFieldConfig[];
+}
+
+/**
+ * Configuration for a data field
+ */
+export interface FieldConfig {
+    /** JSON path to the field (e.g., "id", "medication", "details.drugName") */
+    path: string;
+    /** Default value if field is missing */
+    defaultValue?: any;
+    /** Whether this field is required */
+    required?: boolean;
+}
+
+/**
+ * Configuration for date fields with calculation support
+ */
+export interface DateFieldConfig {
+    /** Type of date configuration */
+    type: 'field' | 'calculation' | 'fixed';
+    /** For type 'field': JSON path to date field */
+    field?: string;
+    /** For type 'calculation': calculation expression */
+    calculation?: DateCalculation;
+    /** For type 'fixed': fixed date value */
+    value?: string;
+    /** Fallback date fields to try if primary fails */
+    fallbacks?: string[];
+    /** Date format for parsing */
+    format?: string;
+}
+
+/**
+ * Date calculation configuration
+ */
+export interface DateCalculation {
+    /** Base date field path */
+    baseField: string;
+    /** Operation to perform */
+    operation: 'add' | 'subtract';
+    /** Value to add/subtract */
+    value: number | string; // Can be number or path to field
+    /** Unit for the operation */
+    unit: 'days' | 'weeks' | 'months' | 'years';
+}
+
+/**
+ * Configuration for display fields in tooltips/details
+ */
+export interface DisplayFieldConfig {
+    /** Label to show for this field */
+    label: string;
+    /** JSON path to the field value */
+    path: string;
+    /** Format type for display */
+    format?: 'text' | 'date' | 'currency' | 'number';
+    /** Whether to show this field in tooltips */
+    showInTooltip?: boolean;
+    /** Whether to show this field in detail panel */
+    showInDetails?: boolean;
+    /** Custom formatter function name */
+    formatter?: string;
+}
+
+/**
+ * Configuration interface for parser settings
+ */
+export interface ParserConfig {
+    // Legacy configuration (for backward compatibility)
+    rxTbaPath?: string;
+    rxHistoryPath?: string;
+    medHistoryPath?: string;
+    dateFormat?: string;
+    colors?: {
+        rxTba: string;
+        rxHistory: string;
+        medHistory: string;
+    };
+    customMappings?: Record<string, string>;
+    
+    // New flexible configuration
+    claimTypes?: ClaimTypeConfig[];
+    globalDateFormat?: string;
+    defaultColors?: string[];
 }
 
 /**

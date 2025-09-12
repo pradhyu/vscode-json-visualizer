@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ClaimsParser } from './claimsParser';
 import { TimelineRenderer } from './timelineRenderer';
-import { ConfigManager, ParserConfig } from './configManager';
+import { ConfigManager } from './configManager';
+import { ParserConfig } from './types';
 import { ClaimItem, TimelineData } from './types';
 
 // Mock VSCode API
@@ -68,7 +69,7 @@ describe('Performance and Edge Case Tests', () => {
             // Generate 1000 prescription claims
             const largeClaims = Array.from({ length: 1000 }, (_, i) => ({
                 id: `rx${i}`,
-                dos: `2024-${String(Math.floor(i / 30) + 1).padStart(2, '0')}-${String((i % 30) + 1).padStart(2, '0')}`,
+                dos: `2024-${String((Math.floor(i / 30) % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
                 dayssupply: 30,
                 medication: `Medication ${i}`,
                 dosage: '10mg once daily'
@@ -94,8 +95,8 @@ describe('Performance and Edge Case Tests', () => {
                 provider: `Provider ${i}`,
                 lines: Array.from({ length: Math.floor(Math.random() * 4) + 2 }, (_, j) => ({
                     lineId: `line${i}_${j}`,
-                    srvcStart: `2024-${String(Math.floor(i / 30) + 1).padStart(2, '0')}-${String((i % 30) + 1).padStart(2, '0')}`,
-                    srvcEnd: `2024-${String(Math.floor(i / 30) + 1).padStart(2, '0')}-${String((i % 30) + 1).padStart(2, '0')}`,
+                    srvcStart: `2024-${String((Math.floor(i / 30) % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
+                    srvcEnd: `2024-${String((Math.floor(i / 30) % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
                     serviceType: `Service ${j}`,
                     description: `Medical service ${i}-${j}`
                 }))
@@ -333,7 +334,7 @@ describe('Performance and Edge Case Tests', () => {
             
             // Should generate fallback IDs and names
             expect(result[0].id).toBe('rxTba_0');
-            expect(result[0].displayName).toBe('rxTba Claim rxTba_0');
+            expect(result[0].displayName).toBe('rxTba Claim 1'); // Uses index + 1 for display name
             
             expect(result[1].displayName).toBe('rxTba Claim rx2');
             expect(result[2].displayName).toBe('rxTba Claim rx3');

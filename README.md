@@ -10,10 +10,12 @@ A VSCode extension that transforms medical claims data from JSON files into inte
 - 🏥 **Multiple Claim Types Support** - Handles prescription claims (rxTba, rxHistory) and medical claims (medHistory)
 - 🎨 **Color-Coded Claims** - Different colors for each claim type with customizable color schemes
 - 🔍 **Detailed Tooltips** - Hover over claims to see detailed information
-- ⚙️ **Configurable Data Mapping** - Customize JSON attribute paths for different data formats
-- 📅 **Flexible Date Formats** - Support for various date formats with automatic parsing
+- ⚙️ **Flexible Data Configuration** - **NEW!** Define custom data formats, field mappings, and date calculations through JSON configuration
+- 📅 **Advanced Date Handling** - Support for date calculations (e.g., start date + days supply), fallbacks, and multiple formats
+- 🎯 **Configurable Display Fields** - Control what information appears in tooltips and detail panels
 - 🚀 **High Performance** - Efficiently handles large datasets with 1000+ claims
 - 🛠️ **Error Recovery** - Comprehensive error handling with helpful suggestions
+- 🔄 **Backward Compatible** - Existing configurations continue to work seamlessly
 
 ## Quick Start
 
@@ -25,7 +27,52 @@ A VSCode extension that transforms medical claims data from JSON files into inte
 
 ### Supported Data Formats
 
-The extension supports JSON files with the following structure:
+The extension supports both **legacy predefined formats** and **flexible custom formats**.
+
+#### Flexible Custom Formats (NEW!)
+
+Define your own data structure using the powerful flexible configuration system:
+
+```json
+{
+  "claimsTimeline.claimTypes": [
+    {
+      "name": "prescriptions",
+      "arrayPath": "patient.medications",
+      "color": "#FF6B6B",
+      "idField": {"path": "prescriptionId"},
+      "startDate": {"type": "field", "field": "startDate"},
+      "endDate": {
+        "type": "calculation",
+        "calculation": {
+          "baseField": "startDate",
+          "operation": "add",
+          "value": "daysSupply",
+          "unit": "days"
+        }
+      },
+      "displayName": {"path": "drugName"},
+      "displayFields": [
+        {"label": "Drug", "path": "drugName", "showInTooltip": true},
+        {"label": "Days Supply", "path": "daysSupply", "format": "number"}
+      ]
+    }
+  ]
+}
+```
+
+**Benefits of Flexible Configuration:**
+- 🎯 **Any JSON Structure** - Works with your existing data format
+- 📊 **Custom Field Mapping** - Map any field to timeline properties
+- 🧮 **Date Calculations** - Automatic end date calculation (start + duration)
+- 🎨 **Rich Display Options** - Control tooltips and detail panels
+- 🔄 **Multiple Claim Types** - Support unlimited claim categories
+
+See the [Flexible Configuration Guide](docs/FLEXIBLE_CONFIGURATION.md) for complete documentation.
+
+#### Legacy Predefined Formats
+
+The extension also supports traditional medical claims formats:
 
 #### Prescription Claims (rxTba and rxHistory)
 ```json
@@ -106,24 +153,65 @@ There are several ways to open the timeline view:
 
 ## Configuration
 
-### Extension Settings
+The extension supports two configuration approaches:
+
+### 1. Flexible Configuration (Recommended)
+
+Define custom data formats using the powerful flexible configuration system. This allows you to work with any JSON structure.
+
+**Quick Setup:**
+1. Open VSCode Settings (`File > Preferences > Settings`)
+2. Search for "Medical Claims Timeline"
+3. Click "Edit in settings.json" for `claimTypes`
+4. Use the [Flexible Configuration Guide](docs/FLEXIBLE_CONFIGURATION.md) and examples
+
+**Example Configuration:**
+```json
+{
+  "claimsTimeline.claimTypes": [
+    {
+      "name": "medications",
+      "arrayPath": "patient.prescriptions",
+      "color": "#FF6B6B",
+      "idField": {"path": "id"},
+      "startDate": {"type": "field", "field": "startDate"},
+      "endDate": {
+        "type": "calculation", 
+        "calculation": {"baseField": "startDate", "operation": "add", "value": "duration", "unit": "days"}
+      },
+      "displayName": {"path": "medication"},
+      "displayFields": [
+        {"label": "Medication", "path": "medication", "showInTooltip": true},
+        {"label": "Dosage", "path": "dosage", "showInTooltip": true},
+        {"label": "Cost", "path": "cost", "format": "currency", "showInDetails": true}
+      ]
+    }
+  ]
+}
+```
+
+### 2. Legacy Configuration
+
+For backward compatibility, the extension continues to support the original configuration format:
+
+#### Extension Settings
 
 Configure the extension through VSCode settings (`File > Preferences > Settings` and search for "Medical Claims Timeline"):
 
 #### Data Mapping Settings
 ```json
 {
-  "medicalClaimsTimeline.rxTbaPath": "rxTba",
-  "medicalClaimsTimeline.rxHistoryPath": "rxHistory", 
-  "medicalClaimsTimeline.medHistoryPath": "medHistory",
-  "medicalClaimsTimeline.dateFormat": "YYYY-MM-DD"
+  "claimsTimeline.rxTbaPath": "rxTba",
+  "claimsTimeline.rxHistoryPath": "rxHistory", 
+  "claimsTimeline.medHistoryPath": "medHistory",
+  "claimsTimeline.dateFormat": "YYYY-MM-DD"
 }
 ```
 
 #### Color Customization
 ```json
 {
-  "medicalClaimsTimeline.colors": {
+  "claimsTimeline.colors": {
     "rxTba": "#FF6B6B",
     "rxHistory": "#4ECDC4", 
     "medHistory": "#45B7D1"
@@ -134,7 +222,7 @@ Configure the extension through VSCode settings (`File > Preferences > Settings`
 #### Custom Attribute Mappings
 ```json
 {
-  "medicalClaimsTimeline.customMappings": {
+  "claimsTimeline.customMappings": {
     "customField": "data.nested.field"
   }
 }
@@ -157,9 +245,9 @@ If your JSON uses different attribute names, configure custom paths:
 
 ```json
 {
-  "medicalClaimsTimeline.rxTbaPath": "prescriptions.pending",
-  "medicalClaimsTimeline.rxHistoryPath": "prescriptions.history",
-  "medicalClaimsTimeline.medHistoryPath": "medical.claims"
+  "claimsTimeline.rxTbaPath": "prescriptions.pending",
+  "claimsTimeline.rxHistoryPath": "prescriptions.history",
+  "claimsTimeline.medHistoryPath": "medical.claims"
 }
 ```
 

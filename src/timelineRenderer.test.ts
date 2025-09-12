@@ -7,7 +7,7 @@ import { TimelineData, ClaimItem } from './types';
 vi.mock('vscode', () => ({
     window: {
         createWebviewPanel: vi.fn(),
-        showErrorMessage: vi.fn(),
+        showErrorMessage: vi.fn().mockResolvedValue(undefined),
         showInformationMessage: vi.fn()
     },
     ViewColumn: {
@@ -170,7 +170,11 @@ describe('TimelineRenderer', () => {
             // Simulate error message
             messageHandler({ command: 'error', payload: { message: 'Test error' } });
 
-            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Timeline Error: Test error');
+            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+                expect.stringContaining('Timeline Error: Test error'),
+                'Retry',
+                'Report Issue'
+            );
         });
     });
 

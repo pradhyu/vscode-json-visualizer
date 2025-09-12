@@ -8,7 +8,7 @@ import {
     ErrorHandler 
 } from './types';
 import { ClaimsParser } from './claimsParser';
-import { ParserConfig } from './configManager';
+import { ParserConfig } from './types';
 
 describe('Error Handling', () => {
     let claimsParser: ClaimsParser;
@@ -185,10 +185,12 @@ describe('Error Handling', () => {
                 // The error should contain format suggestions from the original parseDate error
                 const details = (error as DateParseError).details;
                 
-                // The suggestedFormats should be directly in details based on the logs
-                expect(details?.suggestedFormats).toBeDefined();
-                expect(details?.examples).toBeDefined();
-                expect(details?.suggestedFormats).toContain('YYYY-MM-DD');
+                // When all claims fail, the error details contain the errors array
+                expect(details?.type).toBe('rxTba');
+                expect(details?.totalClaims).toBe(1);
+                expect(details?.errors).toBeDefined();
+                expect(details?.errors[0]).toContain('Unable to parse date');
+                expect(details?.errors[0]).toContain('YYYY-MM-DD');
             }
         });
     });

@@ -10,7 +10,7 @@ import {
     FileReadError,
     StructureValidationError
 } from './types';
-import { ParserConfig } from './configManager';
+import { ParserConfig } from './types';
 
 /**
  * ClaimsParser class for reading and transforming medical claims JSON files
@@ -72,7 +72,18 @@ export class ClaimsParser {
      * @throws StructureValidationError with detailed information about missing fields
      */
     public validateStructure(json: any): boolean {
+        const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
+        
+        if (enableDiagnosticLogging) {
+            console.log('=== DIAGNOSTIC: ClaimsParser.validateStructure started ===');
+            console.log('DIAGNOSTIC: Input JSON type:', typeof json);
+            console.log('DIAGNOSTIC: Input JSON keys:', json ? Object.keys(json) : 'null/undefined');
+        }
+        
         if (!json || typeof json !== 'object') {
+            if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: JSON validation failed - not an object');
+            }
             throw new StructureValidationError(
                 'Invalid JSON: Expected an object but received ' + typeof json,
                 ['root object'],
@@ -83,24 +94,76 @@ export class ClaimsParser {
         const missingFields: string[] = [];
         const suggestions: string[] = [];
 
-        // Check if at least one of the expected claim arrays exists
-        const hasRxTba = Array.isArray(this.getNestedValue(json, this.config.rxTbaPath));
-        const hasRxHistory = Array.isArray(this.getNestedValue(json, this.config.rxHistoryPath));
-        const hasMedHistory = this.validateMedHistoryStructure(json);
+        if (enableDiagnosticLogging) {
+            console.log('DIAGNOSTIC: Checking for claim arrays with config:', {
+                rxTbaPath: this.config.rxTbaPath,
+                rxHistoryPath: this.config.rxHistoryPath,
+                medHistoryPath: this.config.medHistoryPath
+            });
+        }
 
+        // Check if at least one of the expected claim arrays exists
+        const rxTbaValue = this.config.rxTbaPath ? this.getNestedValue(json, this.config.rxTbaPath) : null;
+        const hasRxTba = Array.isArray(rxTbaValue);
+        
+        if (enableDiagnosticLogging) {
+            console.log('DIAGNOSTIC: rxTba check:', {
+                path: this.config.rxTbaPath,
+                value: hasRxTba ? `Array with ${rxTbaValue.length} items` : rxTbaValue,
+                isArray: hasRxTba,
+                length: hasRxTba ? rxTbaValue.length : 'N/A'
+            });
+        }
+        
+        const rxHistoryValue = this.config.rxHistoryPath ? this.getNestedValue(json, this.config.rxHistoryPath) : null;
+        const hasRxHistory = Array.isArray(rxHistoryValue);
+        
+        if (enableDiagnosticLogging) {
+            console.log('DIAGNOSTIC: rxHistory check:', {
+                path: this.config.rxHistoryPath,
+                value: hasRxHistory ? `Array with ${rxHistoryValue.length} items` : rxHistoryValue,
+                isArray: hasRxHistory,
+                length: hasRxHistory ? rxHistoryValue.length : 'N/A'
+            });
+        }
+        
+        const hasMedHistory = this.validateMedHistoryStructure(json);
+        
+        if (enableDiagnosticLogging) {
+            console.log('DIAGNOSTIC: medHistory check result:', hasMedHistory);
+        }
+
+        // Build missing fields list for informational purposes
         if (!hasRxTba) {
-            missingFields.push(`${this.config.rxTbaPath} (prescription claims - rxTba)`);
+            missingFields.push(`${this.config.rxTbaPath || 'rxTba'} (prescription claims - rxTba)`);
         }
 
         if (!hasRxHistory) {
-            missingFields.push(`${this.config.rxHistoryPath} (prescription history - rxHistory)`);
+            missingFields.push(`${this.config.rxHistoryPath || 'rxHistory'} (prescription history - rxHistory)`);
         }
 
         if (!hasMedHistory) {
-            missingFields.push(`${this.config.medHistoryPath} (medical claims - medHistory)`);
+            missingFields.push(`${this.config.medHistoryPath || 'medHistory'} (medical claims - medHistory)`);
         }
 
-        if (!hasRxTba && !hasRxHistory && !hasMedHistory) {
+        const validArrayCount = [hasRxTba, hasRxHistory, hasMedHistory].filter(Boolean).length;
+        
+        if (enableDiagnosticLogging) {
+            console.log('DIAGNOSTIC: Validation summary:', {
+                hasRxTba,
+                hasRxHistory,
+                hasMedHistory,
+                totalValidArrays: validArrayCount,
+                missingFields: missingFields.length > 0 ? missingFields : 'none'
+            });
+        }
+
+        // Validation passes if at least one valid array exists
+        if (validArrayCount === 0) {
+            if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: No valid arrays found - throwing StructureValidationError');
+            }
+            
             suggestions.push('Ensure your JSON contains at least one of the following arrays: rxTba, rxHistory, or medHistory');
             suggestions.push('Check that the array paths in your configuration match your JSON structure');
             suggestions.push('Verify that the arrays contain valid claim objects');
@@ -112,9 +175,17 @@ export class ClaimsParser {
             );
         }
 
+        if (enableDiagnosticLogging) {
+            console.log(`DIAGNOSTIC: Found ${validArrayCount} valid array(s), validating array structures`);
+        }
+        
         // Validate structure of existing arrays
         this.validateArrayStructures(json, hasRxTba, hasRxHistory, hasMedHistory);
 
+        if (enableDiagnosticLogging) {
+            console.log('=== DIAGNOSTIC: ClaimsParser.validateStructure completed successfully ===');
+        }
+        
         return true;
     }
 
@@ -122,27 +193,61 @@ export class ClaimsParser {
      * Validate the structure of claim arrays that exist
      */
     private validateArrayStructures(json: any, hasRxTba: boolean, hasRxHistory: boolean, hasMedHistory: boolean): void {
+        const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
         const errors: string[] = [];
 
-        if (hasRxTba) {
+        if (hasRxTba && this.config.rxTbaPath) {
+            if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: Validating rxTba array structure...');
+            }
             const rxTbaData = this.getNestedValue(json, this.config.rxTbaPath);
             const rxTbaErrors = this.validateRxArrayStructure(rxTbaData, 'rxTba');
-            errors.push(...rxTbaErrors);
+            if (rxTbaErrors.length > 0) {
+                errors.push(...rxTbaErrors);
+                if (enableDiagnosticLogging) {
+                    console.log('DIAGNOSTIC: rxTba validation errors:', rxTbaErrors);
+                }
+            } else if (enableDiagnosticLogging) {
+                console.log(`DIAGNOSTIC: rxTba array structure valid (${rxTbaData.length} items)`);
+            }
         }
 
-        if (hasRxHistory) {
+        if (hasRxHistory && this.config.rxHistoryPath) {
+            if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: Validating rxHistory array structure...');
+            }
             const rxHistoryData = this.getNestedValue(json, this.config.rxHistoryPath);
             const rxHistoryErrors = this.validateRxArrayStructure(rxHistoryData, 'rxHistory');
-            errors.push(...rxHistoryErrors);
+            if (rxHistoryErrors.length > 0) {
+                errors.push(...rxHistoryErrors);
+                if (enableDiagnosticLogging) {
+                    console.log('DIAGNOSTIC: rxHistory validation errors:', rxHistoryErrors);
+                }
+            } else if (enableDiagnosticLogging) {
+                console.log(`DIAGNOSTIC: rxHistory array structure valid (${rxHistoryData.length} items)`);
+            }
         }
 
-        if (hasMedHistory) {
+        if (hasMedHistory && this.config.medHistoryPath) {
+            if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: Validating medHistory array structure...');
+            }
             const medHistoryData = this.getNestedValue(json, this.config.medHistoryPath);
             const medHistoryErrors = this.validateMedHistoryArrayStructure(medHistoryData);
-            errors.push(...medHistoryErrors);
+            if (medHistoryErrors.length > 0) {
+                errors.push(...medHistoryErrors);
+                if (enableDiagnosticLogging) {
+                    console.log('DIAGNOSTIC: medHistory validation errors:', medHistoryErrors);
+                }
+            } else if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: medHistory array structure valid');
+            }
         }
 
         if (errors.length > 0) {
+            if (enableDiagnosticLogging) {
+                console.log('DIAGNOSTIC: Array structure validation failed with errors:', errors);
+            }
             throw new StructureValidationError(
                 'Invalid claim array structures found',
                 errors,
@@ -153,34 +258,65 @@ export class ClaimsParser {
                 ]
             );
         }
+
+        if (enableDiagnosticLogging) {
+            console.log('DIAGNOSTIC: All array structures validated successfully');
+        }
     }
 
     /**
      * Validate prescription claim array structure
      */
     private validateRxArrayStructure(rxData: any[], type: string): string[] {
+        const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
         const errors: string[] = [];
 
         if (!Array.isArray(rxData) || rxData.length === 0) {
+            if (enableDiagnosticLogging && rxData.length === 0) {
+                console.log(`DIAGNOSTIC: ${type} array is empty - this is valid`);
+            }
             return errors; // Empty arrays are valid
         }
 
+        if (enableDiagnosticLogging) {
+            console.log(`DIAGNOSTIC: Validating ${rxData.length} items in ${type} array`);
+        }
+
+        let validItems = 0;
         rxData.forEach((claim, index) => {
             if (!claim || typeof claim !== 'object') {
                 errors.push(`${type}[${index}]: Expected object but found ${typeof claim}`);
                 return;
             }
 
+            let itemValid = true;
+
+            // Validate required 'dos' field
             if (!claim.dos) {
                 errors.push(`${type}[${index}]: Missing required field 'dos' (date of service)`);
+                itemValid = false;
             } else if (typeof claim.dos !== 'string') {
                 errors.push(`${type}[${index}]: Field 'dos' must be a string, found ${typeof claim.dos}`);
+                itemValid = false;
             }
 
+            // Validate optional 'dayssupply' field
             if (claim.dayssupply !== undefined && typeof claim.dayssupply !== 'number') {
                 errors.push(`${type}[${index}]: Field 'dayssupply' must be a number, found ${typeof claim.dayssupply}`);
+                itemValid = false;
+            }
+
+            if (itemValid) {
+                validItems++;
             }
         });
+
+        if (enableDiagnosticLogging) {
+            console.log(`DIAGNOSTIC: ${type} validation complete - ${validItems}/${rxData.length} items valid, ${errors.length} errors`);
+            if (errors.length > 0) {
+                console.log(`DIAGNOSTIC: ${type} validation errors:`, errors);
+            }
+        }
 
         return errors;
     }
@@ -246,30 +382,170 @@ export class ClaimsParser {
 
         try {
             // Extract rxTba claims
-            const rxTbaData = this.getNestedValue(json, config.rxTbaPath);
-            if (Array.isArray(rxTbaData)) {
-                claims.push(...this.transformRxClaims(rxTbaData, 'rxTba', config.colors.rxTba));
+            if (config.rxTbaPath) {
+                const rxTbaData = this.getNestedValue(json, config.rxTbaPath);
+                if (Array.isArray(rxTbaData)) {
+                    claims.push(...this.transformRxClaims(rxTbaData, 'rxTba', config.colors?.rxTba || '#FF6B6B'));
+                }
             }
 
             // Extract rxHistory claims
-            const rxHistoryData = this.getNestedValue(json, config.rxHistoryPath);
-            if (Array.isArray(rxHistoryData)) {
-                claims.push(...this.transformRxClaims(rxHistoryData, 'rxHistory', config.colors.rxHistory));
+            if (config.rxHistoryPath) {
+                const rxHistoryData = this.getNestedValue(json, config.rxHistoryPath);
+                if (Array.isArray(rxHistoryData)) {
+                    claims.push(...this.transformRxClaims(rxHistoryData, 'rxHistory', config.colors?.rxHistory || '#4ECDC4'));
+                }
             }
 
             // Extract medHistory claims
-            const medHistoryData = this.getNestedValue(json, config.medHistoryPath);
-            if (medHistoryData && medHistoryData.claims && Array.isArray(medHistoryData.claims)) {
-                claims.push(...this.transformMedClaims(medHistoryData.claims, config.colors.medHistory));
+            if (config.medHistoryPath) {
+                const medHistoryData = this.getNestedValue(json, config.medHistoryPath);
+                if (medHistoryData && medHistoryData.claims && Array.isArray(medHistoryData.claims)) {
+                    claims.push(...this.transformMedClaims(medHistoryData.claims, config.colors?.medHistory || '#45B7D1'));
+                }
             }
 
-            return claims;
+            // Standardize output format to match simple version
+            const standardizedClaims = this.standardizeClaimFormat(claims);
+            
+            // Validate output format before returning
+            this.validateOutputFormat(standardizedClaims);
+
+            return standardizedClaims;
 
         } catch (error) {
             if (error instanceof ParseError) {
                 throw error;
             }
             throw new ParseError(`Error extracting claims: ${error}`, 'EXTRACTION_ERROR');
+        }
+    }
+
+    /**
+     * Standardize claim format to match working simple version
+     * @param claims Array of ClaimItem objects with Date objects
+     * @returns Array of ClaimItem objects with ISO string dates
+     */
+    private standardizeClaimFormat(claims: ClaimItem[]): ClaimItem[] {
+        const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
+        
+        if (enableDiagnosticLogging) {
+            console.log('=== DIAGNOSTIC: Standardizing claim format ===');
+            console.log(`Processing ${claims.length} claims`);
+        }
+
+        return claims.map((claim, index) => {
+            if (enableDiagnosticLogging) {
+                console.log(`DIAGNOSTIC: Standardizing claim ${index}:`, {
+                    id: claim.id,
+                    type: claim.type,
+                    originalStartDate: claim.startDate,
+                    originalEndDate: claim.endDate
+                });
+            }
+
+            // Ensure dates are Date objects
+            const standardizedClaim: ClaimItem = {
+                id: claim.id,
+                type: claim.type,
+                startDate: claim.startDate instanceof Date ? claim.startDate : new Date(claim.startDate),
+                endDate: claim.endDate instanceof Date ? claim.endDate : new Date(claim.endDate),
+                displayName: claim.displayName,
+                color: claim.color,
+                details: { ...claim.details }
+            };
+
+            if (enableDiagnosticLogging) {
+                console.log(`DIAGNOSTIC: Standardized claim ${index}:`, {
+                    id: standardizedClaim.id,
+                    type: standardizedClaim.type,
+                    startDate: standardizedClaim.startDate,
+                    endDate: standardizedClaim.endDate,
+                    displayName: standardizedClaim.displayName
+                });
+            }
+
+            return standardizedClaim;
+        });
+    }
+
+    /**
+     * Validate output format matches expected structure
+     * @param claims Array of standardized ClaimItem objects
+     * @throws ValidationError if format is invalid
+     */
+    private validateOutputFormat(claims: ClaimItem[]): void {
+        const enableDiagnosticLogging = process.env.NODE_ENV === 'development' || process.env.CLAIMS_PARSER_DEBUG === 'true';
+        
+        if (enableDiagnosticLogging) {
+            console.log('=== DIAGNOSTIC: Validating output format ===');
+            console.log(`Validating ${claims.length} claims`);
+        }
+
+        claims.forEach((claim, index) => {
+            // Validate required fields
+            if (!claim.id || typeof claim.id !== 'string') {
+                throw new ValidationError(`Claim ${index}: Invalid or missing id field`);
+            }
+
+            if (!claim.type || typeof claim.type !== 'string') {
+                throw new ValidationError(`Claim ${index}: Invalid or missing type field`);
+            }
+
+            if (!claim.displayName || typeof claim.displayName !== 'string') {
+                throw new ValidationError(`Claim ${index}: Invalid or missing displayName field`);
+            }
+
+            if (!claim.color || typeof claim.color !== 'string') {
+                throw new ValidationError(`Claim ${index}: Invalid or missing color field`);
+            }
+
+            // Validate date format (should be ISO strings after standardization)
+            if (typeof claim.startDate !== 'string') {
+                throw new ValidationError(`Claim ${index}: startDate must be ISO string, got ${typeof claim.startDate}`);
+            }
+
+            if (typeof claim.endDate !== 'string') {
+                throw new ValidationError(`Claim ${index}: endDate must be ISO string, got ${typeof claim.endDate}`);
+            }
+
+            // Validate ISO date format
+            const startDateTest = new Date(claim.startDate as any);
+            const endDateTest = new Date(claim.endDate as any);
+            
+            if (isNaN(startDateTest.getTime())) {
+                throw new ValidationError(`Claim ${index}: Invalid startDate ISO format: ${claim.startDate}`);
+            }
+
+            if (isNaN(endDateTest.getTime())) {
+                throw new ValidationError(`Claim ${index}: Invalid endDate ISO format: ${claim.endDate}`);
+            }
+
+            // Validate date range
+            if (endDateTest < startDateTest) {
+                throw new ValidationError(`Claim ${index}: endDate cannot be before startDate`);
+            }
+
+            // Validate details object
+            if (!claim.details || typeof claim.details !== 'object') {
+                throw new ValidationError(`Claim ${index}: details must be an object`);
+            }
+
+            if (enableDiagnosticLogging && index < 3) { // Log first 3 claims for debugging
+                console.log(`DIAGNOSTIC: Claim ${index} validation passed:`, {
+                    id: claim.id,
+                    type: claim.type,
+                    startDate: claim.startDate,
+                    endDate: claim.endDate,
+                    displayName: claim.displayName,
+                    color: claim.color,
+                    detailsKeys: Object.keys(claim.details)
+                });
+            }
+        });
+
+        if (enableDiagnosticLogging) {
+            console.log('=== DIAGNOSTIC: Output format validation completed successfully ===');
         }
     }
 
@@ -579,16 +855,24 @@ export class ClaimsParser {
             };
         }
 
-        // Calculate date range
-        const dates = claims.flatMap(claim => [claim.startDate, claim.endDate]);
+        // Calculate date range - handle both Date objects and ISO strings
+        const dates = claims.flatMap(claim => {
+            const startDate = claim.startDate instanceof Date ? claim.startDate : new Date(claim.startDate);
+            const endDate = claim.endDate instanceof Date ? claim.endDate : new Date(claim.endDate);
+            return [startDate, endDate];
+        });
         const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
         const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
 
         // Get unique claim types
         const claimTypes = Array.from(new Set(claims.map(claim => claim.type)));
 
-        // Sort claims by start date (most recent first)
-        const sortedClaims = claims.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+        // Sort claims by start date (most recent first) - handle both Date objects and ISO strings
+        const sortedClaims = claims.sort((a, b) => {
+            const aStartDate = a.startDate instanceof Date ? a.startDate : new Date(a.startDate);
+            const bStartDate = b.startDate instanceof Date ? b.startDate : new Date(b.startDate);
+            return bStartDate.getTime() - aStartDate.getTime();
+        });
 
         return {
             claims: sortedClaims,
@@ -717,7 +1001,7 @@ export class ClaimsParser {
      * @returns Array of date format strings
      */
     private getDateFormats(): string[] {
-        const configFormat = this.config.dateFormat;
+        const configFormat = this.config.dateFormat || 'YYYY-MM-DD';
         const commonFormats = [
             'YYYY-MM-DD',
             'MM/DD/YYYY',
@@ -808,6 +1092,7 @@ export class ClaimsParser {
      * @returns boolean indicating if medHistory structure is valid
      */
     private validateMedHistoryStructure(json: any): boolean {
+        if (!this.config.medHistoryPath) return false;
         const medHistoryData = this.getNestedValue(json, this.config.medHistoryPath);
         
         if (!medHistoryData || typeof medHistoryData !== 'object') {

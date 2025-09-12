@@ -18,7 +18,8 @@ vi.mock('vscode', () => ({
   },
 }));
 
-import { ConfigManager, ParserConfig } from './configManager';
+import { ConfigManager } from './configManager';
+import { ParserConfig } from './types';
 
 describe('ConfigManager', () => {
   let configManager: ConfigManager;

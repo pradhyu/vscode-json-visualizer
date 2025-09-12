@@ -1,0 +1,18 @@
+{
+  "rxTba": [
+    {
+      "id": "rx1",
+      "dos": "2024-01-15",
+      "dayssupply": 30,
+      "medication": "Test Medication",
+      "dosage": "10mg once daily"
+    },
+    {
+      "id": "rx2", 
+      "dos": "2024-02-01",
+      "dayssupply": 7,
+      "medication": "Another Medication",
+      "dosage": "5mg twice daily"
+    }
+  ]
+}

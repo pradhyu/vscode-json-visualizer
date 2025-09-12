@@ -1,0 +1,181 @@
+{
+  "claimsTimeline.claimTypes": [
+    {
+      "name": "prescriptions",
+      "arrayPath": "patient.medications",
+      "color": "#FF6B6B",
+      "idField": {
+        "path": "prescriptionId",
+        "defaultValue": "auto-generated"
+      },
+      "startDate": {
+        "type": "field",
+        "field": "startDate",
+        "fallbacks": ["prescribedDate", "fillDate"]
+      },
+      "endDate": {
+        "type": "calculation",
+        "calculation": {
+          "baseField": "startDate",
+          "operation": "add",
+          "value": "daysSupply",
+          "unit": "days"
+        }
+      },
+      "displayName": {
+        "path": "drugName",
+        "defaultValue": "Prescription"
+      },
+      "displayFields": [
+        {
+          "label": "Drug Name",
+          "path": "drugName",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Strength",
+          "path": "strength",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Days Supply",
+          "path": "daysSupply",
+          "format": "number",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Prescriber",
+          "path": "prescriber.name",
+          "format": "text",
+          "showInTooltip": false,
+          "showInDetails": true
+        },
+        {
+          "label": "Cost",
+          "path": "cost",
+          "format": "currency",
+          "showInTooltip": false,
+          "showInDetails": true
+        }
+      ]
+    },
+    {
+      "name": "appointments",
+      "arrayPath": "patient.appointments",
+      "color": "#4ECDC4",
+      "idField": {
+        "path": "appointmentId",
+        "defaultValue": "auto-generated"
+      },
+      "startDate": {
+        "type": "field",
+        "field": "appointmentDate"
+      },
+      "endDate": {
+        "type": "calculation",
+        "calculation": {
+          "baseField": "appointmentDate",
+          "operation": "add",
+          "value": "durationMinutes",
+          "unit": "minutes"
+        }
+      },
+      "displayName": {
+        "path": "appointmentType",
+        "defaultValue": "Appointment"
+      },
+      "displayFields": [
+        {
+          "label": "Type",
+          "path": "appointmentType",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Provider",
+          "path": "provider.name",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Duration",
+          "path": "durationMinutes",
+          "format": "number",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Status",
+          "path": "status",
+          "format": "text",
+          "showInTooltip": false,
+          "showInDetails": true
+        }
+      ]
+    },
+    {
+      "name": "labResults",
+      "arrayPath": "patient.labResults",
+      "color": "#45B7D1",
+      "idField": {
+        "path": "testId",
+        "defaultValue": "auto-generated"
+      },
+      "startDate": {
+        "type": "field",
+        "field": "collectionDate"
+      },
+      "endDate": {
+        "type": "field",
+        "field": "resultDate",
+        "fallbacks": ["collectionDate"]
+      },
+      "displayName": {
+        "path": "testName",
+        "defaultValue": "Lab Test"
+      },
+      "displayFields": [
+        {
+          "label": "Test Name",
+          "path": "testName",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Result",
+          "path": "result",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        },
+        {
+          "label": "Reference Range",
+          "path": "referenceRange",
+          "format": "text",
+          "showInTooltip": false,
+          "showInDetails": true
+        },
+        {
+          "label": "Status",
+          "path": "status",
+          "format": "text",
+          "showInTooltip": true,
+          "showInDetails": true
+        }
+      ]
+    }
+  ],
+  "claimsTimeline.globalDateFormat": "YYYY-MM-DD",
+  "claimsTimeline.defaultColors": [
+    "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", 
+    "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9"
+  ]
+}

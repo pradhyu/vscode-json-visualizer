@@ -12,71 +12,128 @@
   ],
   "activationEvents": [
     "onLanguage:json",
-    "onCommand:medicalClaimsTimeline.viewTimeline"
+    "onCommand:claimsTimeline.viewTimeline"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "medicalClaimsTimeline.viewTimeline",
+        "command": "claimsTimeline.viewTimeline",
         "title": "View Timeline",
-        "category": "Medical Claims"
+        "category": "Claims Timeline"
+      },
+      {
+        "command": "claimsTimeline.diagnose",
+        "title": "Diagnose Timeline Issues",
+        "category": "Claims Timeline"
+      },
+      {
+        "command": "claimsTimeline.testParsing",
+        "title": "Test Parsing",
+        "category": "Claims Timeline"
+      },
+      {
+        "command": "claimsTimeline.showDebugInfo",
+        "title": "Show Debug Info",
+        "category": "Claims Timeline"
       }
     ],
     "menus": {
       "explorer/context": [
         {
-          "command": "medicalClaimsTimeline.viewTimeline",
+          "command": "claimsTimeline.viewTimeline",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        },
+        {
+          "command": "claimsTimeline.diagnose",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        },
+        {
+          "command": "claimsTimeline.testParsing",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        },
+        {
+          "command": "claimsTimeline.showDebugInfo",
           "when": "resourceExtname == .json",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
-          "command": "medicalClaimsTimeline.viewTimeline",
+          "command": "claimsTimeline.viewTimeline",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        },
+        {
+          "command": "claimsTimeline.diagnose",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        },
+        {
+          "command": "claimsTimeline.testParsing",
+          "when": "resourceExtname == .json",
+          "group": "navigation"
+        },
+        {
+          "command": "claimsTimeline.showDebugInfo",
           "when": "resourceExtname == .json",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
-          "command": "medicalClaimsTimeline.viewTimeline",
+          "command": "claimsTimeline.viewTimeline",
+          "when": "editorLangId == json"
+        },
+        {
+          "command": "claimsTimeline.diagnose",
+          "when": "editorLangId == json"
+        },
+        {
+          "command": "claimsTimeline.testParsing",
+          "when": "editorLangId == json"
+        },
+        {
+          "command": "claimsTimeline.showDebugInfo",
           "when": "editorLangId == json"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "medicalClaimsTimeline.viewTimeline",
+        "command": "claimsTimeline.viewTimeline",
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
         "when": "editorLangId == json"
       }
     ],
     "configuration": {
-      "title": "Medical Claims Timeline",
+      "title": "Claims Timeline",
       "properties": {
-        "medicalClaimsTimeline.rxTbaPath": {
+        "claimsTimeline.rxTbaPath": {
           "type": "string",
           "default": "rxTba",
           "description": "JSON path to rxTba array"
         },
-        "medicalClaimsTimeline.rxHistoryPath": {
+        "claimsTimeline.rxHistoryPath": {
           "type": "string",
           "default": "rxHistory",
           "description": "JSON path to rxHistory array"
         },
-        "medicalClaimsTimeline.medHistoryPath": {
+        "claimsTimeline.medHistoryPath": {
           "type": "string",
           "default": "medHistory",
           "description": "JSON path to medHistory array"
         },
-        "medicalClaimsTimeline.dateFormat": {
+        "claimsTimeline.dateFormat": {
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date format for parsing claim dates"
         },
-        "medicalClaimsTimeline.colors": {
+        "claimsTimeline.colors": {
           "type": "object",
           "default": {
             "rxTba": "#FF6B6B",
@@ -102,12 +159,162 @@
             }
           }
         },
-        "medicalClaimsTimeline.customMappings": {
+        "claimsTimeline.customMappings": {
           "type": "object",
           "default": {},
           "description": "Custom attribute path mappings for different JSON structures",
           "additionalProperties": {
             "type": "string"
+          }
+        },
+        "claimsTimeline.claimTypes": {
+          "type": "array",
+          "default": [],
+          "description": "Flexible claim type configurations for custom data formats",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name/key of the claim type"
+              },
+              "arrayPath": {
+                "type": "string",
+                "description": "JSON path to the array containing claims of this type"
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+                "description": "Color for this claim type in timeline"
+              },
+              "idField": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "JSON path to the ID field"
+                  },
+                  "defaultValue": {
+                    "type": "string",
+                    "description": "Default value if field is missing"
+                  }
+                },
+                "required": ["path"]
+              },
+              "startDate": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["field", "calculation", "fixed"]
+                  },
+                  "field": {
+                    "type": "string",
+                    "description": "JSON path to date field (for type 'field')"
+                  },
+                  "calculation": {
+                    "type": "object",
+                    "properties": {
+                      "baseField": {
+                        "type": "string",
+                        "description": "Base date field path"
+                      },
+                      "operation": {
+                        "type": "string",
+                        "enum": ["add", "subtract"]
+                      },
+                      "value": {
+                        "oneOf": [
+                          {"type": "number"},
+                          {"type": "string"}
+                        ],
+                        "description": "Value to add/subtract (number or field path)"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": ["days", "weeks", "months", "years"]
+                      }
+                    },
+                    "required": ["baseField", "operation", "value", "unit"]
+                  },
+                  "value": {
+                    "type": "string",
+                    "description": "Fixed date value (for type 'fixed')"
+                  },
+                  "fallbacks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Fallback date fields to try"
+                  }
+                },
+                "required": ["type"]
+              },
+              "endDate": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["field", "calculation", "fixed"]
+                  },
+                  "field": {
+                    "type": "string"
+                  },
+                  "calculation": {
+                    "type": "object",
+                    "properties": {
+                      "baseField": {"type": "string"},
+                      "operation": {"type": "string", "enum": ["add", "subtract"]},
+                      "value": {"oneOf": [{"type": "number"}, {"type": "string"}]},
+                      "unit": {"type": "string", "enum": ["days", "weeks", "months", "years"]}
+                    },
+                    "required": ["baseField", "operation", "value", "unit"]
+                  },
+                  "value": {"type": "string"},
+                  "fallbacks": {"type": "array", "items": {"type": "string"}}
+                },
+                "required": ["type"]
+              },
+              "displayName": {
+                "type": "object",
+                "properties": {
+                  "path": {"type": "string"},
+                  "defaultValue": {"type": "string"}
+                },
+                "required": ["path"]
+              },
+              "displayFields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {"type": "string"},
+                    "path": {"type": "string"},
+                    "format": {"type": "string", "enum": ["text", "date", "currency", "number"]},
+                    "showInTooltip": {"type": "boolean"},
+                    "showInDetails": {"type": "boolean"}
+                  },
+                  "required": ["label", "path"]
+                }
+              }
+            },
+            "required": ["name", "arrayPath", "color", "idField", "startDate", "endDate", "displayName"]
+          }
+        },
+        "claimsTimeline.globalDateFormat": {
+          "type": "string",
+          "default": "YYYY-MM-DD",
+          "description": "Global date format for parsing dates",
+          "enum": ["YYYY-MM-DD", "MM/DD/YYYY", "DD-MM-YYYY", "YYYY/MM/DD", "DD/MM/YYYY", "MM-DD-YYYY"]
+        },
+        "claimsTimeline.defaultColors": {
+          "type": "array",
+          "default": ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9"],
+          "description": "Default color palette for claim types",
+          "items": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
           }
         }
       }

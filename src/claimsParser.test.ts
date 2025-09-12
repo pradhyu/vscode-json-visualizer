@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs';
 import { ClaimsParser } from './claimsParser';
-import { ParserConfig } from './configManager';
+import { ParserConfig } from './types';
 import { 
     ClaimItem, 
     TimelineData, 
     ParseError, 
     ValidationError, 
-    DateParseError, 
+    DateParseError,
+    StructureValidationError, 
     FileReadError 
 } from './types';
 
@@ -78,20 +79,20 @@ describe('ClaimsParser', () => {
             expect(parser.validateStructure(validJson)).toBe(true);
         });
 
-        it('should return false for invalid structure', () => {
-            expect(parser.validateStructure(null)).toBe(false);
-            expect(parser.validateStructure({})).toBe(false);
-            expect(parser.validateStructure({ invalidField: 'test' })).toBe(false);
+        it('should throw error for invalid structure', () => {
+            expect(() => parser.validateStructure(null)).toThrow(StructureValidationError);
+            expect(() => parser.validateStructure({})).toThrow(StructureValidationError);
+            expect(() => parser.validateStructure({ invalidField: 'test' })).toThrow(StructureValidationError);
         });
 
-        it('should return false for medHistory without claims array', () => {
+        it('should throw error for medHistory without claims array', () => {
             const invalidJson = {
                 medHistory: {
                     invalidField: 'test'
                 }
             };
             
-            expect(parser.validateStructure(invalidJson)).toBe(false);
+            expect(() => parser.validateStructure(invalidJson)).toThrow(StructureValidationError);
         });
     });
 
@@ -220,7 +221,7 @@ describe('ClaimsParser', () => {
             
             expect(claims).toHaveLength(1);
             expect(claims[0].startDate).toEqual(new Date('2024-01-01'));
-            expect(claims[0].endDate).toEqual(new Date('2024-01-01')); // Same day when dayssupply is 0/undefined
+            expect(claims[0].endDate).toEqual(new Date('2024-01-31')); // 30 days default when dayssupply is missing
         });
 
         it('should generate fallback IDs when missing', () => {
@@ -398,7 +399,11 @@ describe('ClaimsParser', () => {
             const newConfig: ParserConfig = {
                 ...mockConfig,
                 rxTbaPath: 'customRxTba',
-                colors: { ...mockConfig.colors, rxTba: '#000000' }
+                colors: { 
+                    rxTba: '#000000',
+                    rxHistory: mockConfig.colors?.rxHistory || '#4ECDC4',
+                    medHistory: mockConfig.colors?.medHistory || '#45B7D1'
+                }
             };
 
             parser.updateConfig(newConfig);
