@@ -64,3 +64,37 @@
   - Add tests for webview communication
   - Test error handling and fallback mechanisms
   - _Requirements: 1.1, 1.2, 2.1, 2.4_
+
+- [ ] 11. Enhance parser to support multiple claim types
+  - Modify hybridParser to detect and parse rxHistory and medHistory claims
+  - Ensure each claim type gets appropriate color coding and styling
+  - Add validation for multiple claim type structures
+  - _Requirements: 5.1, 5.2_
+
+- [ ] 12. Implement interactive legend component
+  - Create legend UI component in webview HTML
+  - Add click handlers for toggling claim type visibility
+  - Implement smooth animations for show/hide transitions
+  - Add hover tooltips showing claim counts and details
+  - _Requirements: 5.3, 5.4, 5.7_
+
+- [ ] 13. Update timeline visualization for multiple claim types
+  - Modify D3.js rendering to handle multiple claim types simultaneously
+  - Implement distinct visual styling for each claim type
+  - Add proper scaling and layout for overlapping claims
+  - Ensure timeline maintains readability with multiple types
+  - _Requirements: 5.1, 5.2, 5.5_
+
+- [ ] 14. Add claim type toggle functionality
+  - Implement show/hide logic for individual claim types
+  - Update timeline rendering when claim types are toggled
+  - Maintain proper timeline scaling when types are hidden
+  - Add visual feedback for disabled claim types in legend
+  - _Requirements: 5.4, 5.5, 5.6_
+
+- [ ] 15. Test multi-claim type functionality
+  - Create test data with all three claim types (rxTba, rxHistory, medHistory)
+  - Test legend interactions and timeline updates
+  - Verify proper color coding and visual distinction
+  - Test edge cases with missing or empty claim types
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_

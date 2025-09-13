@@ -1,0 +1,64 @@
+{
+  "rxTba": [
+    {
+      "id": "rx102",
+      "dos": "2024-02-14",
+      "dayssupply": 30,
+      "medication": "Lisinopril 10mg",
+      "dosage": "10mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Smith",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-90",
+      "copay": 15
+    }
+  ],
+  "rxHistory": [
+    {
+      "id": "rxh101",
+      "dos": "2023-10-15",
+      "dayssupply": 30,
+      "medication": "Lisinopril 5mg",
+      "dosage": "5mg once daily",
+      "quantity": 30,
+      "prescriber": "Dr. Brown",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-89",
+      "copay": 12
+    }
+  ],
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med101",
+        "provider": "Dr. Smith Family Practice",
+        "claimDate": "2024-01-08",
+        "totalAmount": 280,
+        "lines": [
+          {
+            "lineId": "line101",
+            "srvcStart": "2024-01-08",
+            "srvcEnd": "2024-01-08",
+            "serviceType": "Office Visit",
+            "procedureCode": "99213",
+            "description": "Office visit, established patient",
+            "chargedAmount": 180,
+            "allowedAmount": 140,
+            "paidAmount": 126
+          },
+          {
+            "lineId": "line102",
+            "srvcStart": "2024-01-08",
+            "srvcEnd": "2024-01-08",
+            "serviceType": "Laboratory",
+            "procedureCode": "80053",
+            "description": "Comprehensive metabolic panel",
+            "chargedAmount": 100,
+            "allowedAmount": 75,
+            "paidAmount": 67.5
+          }
+        ]
+      }
+    ]
+  }
+}

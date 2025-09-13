@@ -49,3 +49,17 @@ The Medical Claims Timeline Viewer extension has a complex architecture with mul
 2. WHEN the data is parsed THEN it SHALL create timeline entries for each medication with proper start and end dates
 3. WHEN the timeline renders THEN it SHALL display medication names, dosages, and supply duration information
 4. WHEN I interact with the timeline THEN it SHALL provide the same rich interaction features as the simple version
+
+### Requirement 5
+
+**User Story:** As a user, I want to see all claim types (rxTba, rxHistory, medHistory) displayed on the timeline with interactive controls so that I can analyze different types of medical data.
+
+#### Acceptance Criteria
+
+1. WHEN the timeline loads THEN it SHALL display all available claim types (rxTba, rxHistory, medHistory) with distinct visual styling
+2. WHEN multiple claim types are present THEN each type SHALL have a unique color and visual representation
+3. WHEN the timeline renders THEN it SHALL include an interactive legend showing all claim types with their colors
+4. WHEN I click on a legend item THEN the extension SHALL toggle the visibility of that claim type on the timeline
+5. WHEN I toggle claim types THEN the timeline SHALL smoothly animate the changes and maintain proper scaling
+6. WHEN all claim types of one category are hidden THEN the legend item SHALL show a visual indication (e.g., grayed out or crossed out)
+7. WHEN I hover over legend items THEN it SHALL show additional information about that claim type (e.g., count of claims)

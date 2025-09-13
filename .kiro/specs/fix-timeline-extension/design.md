@@ -125,6 +125,42 @@ interface ExtendedError {
 }
 ```
 
+## Multi-Claim Type Visualization
+
+### Enhanced Timeline Rendering
+The timeline will support multiple claim types with interactive controls:
+
+```typescript
+interface ClaimTypeConfig {
+    type: string;
+    color: string;
+    visible: boolean;
+    displayName: string;
+    icon?: string;
+}
+
+interface EnhancedTimelineData extends TimelineData {
+    claimTypeConfigs: ClaimTypeConfig[];
+}
+```
+
+### Interactive Legend Component
+```typescript
+class InteractiveLegend {
+    // Render legend with toggle controls
+    // Handle click events for show/hide
+    // Animate timeline updates
+    // Show claim counts and statistics
+}
+```
+
+### Webview Enhancements
+The webview will include:
+- **Legend Panel**: Interactive controls for each claim type
+- **Color Coding**: Distinct colors for rxTba, rxHistory, medHistory
+- **Toggle Animation**: Smooth transitions when hiding/showing claim types
+- **Hover Information**: Additional details on legend hover
+
 ## Testing Strategy
 
 ### Validation Approach
@@ -132,10 +168,13 @@ interface ExtendedError {
 2. **Integration Tests**: Test full pipeline with known good data
 3. **Regression Tests**: Ensure simple version functionality is preserved
 4. **Error Path Tests**: Verify error handling doesn't break the extension
+5. **Multi-Type Tests**: Test timeline with all claim types present
+6. **Legend Tests**: Test interactive legend functionality
 
 ### Test Data Scenarios
 - **Working Case**: test-claims.json (known to work with simple version)
-- **Edge Cases**: Empty arrays, missing fields, invalid dates
+- **Multi-Type Case**: JSON with rxTba, rxHistory, and medHistory claims
+- **Edge Cases**: Empty arrays, missing fields, invalid dates, single claim type
 - **Error Cases**: Malformed JSON, wrong structure, network failures
 
 ### Debugging Tools
