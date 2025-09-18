@@ -65,7 +65,7 @@
   - Test error handling and fallback mechanisms
   - _Requirements: 1.1, 1.2, 2.1, 2.4_
 
-- [ ] 11. Enhance parser to support multiple claim types
+- [x] 11. Enhance parser to support multiple claim types
   - Modify hybridParser to detect and parse rxHistory and medHistory claims
   - Ensure each claim type gets appropriate color coding and styling
   - Add validation for multiple claim type structures

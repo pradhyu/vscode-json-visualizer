@@ -1,0 +1,126 @@
+{
+  "rxTba": [
+    {
+      "id": "rx001",
+      "dos": "2024-01-15",
+      "medication": "Lisinopril 10mg",
+      "dayssupply": 30,
+      "dosage": "10mg daily",
+      "quantity": 30,
+      "prescriber": "Dr. Smith",
+      "pharmacy": "CVS Pharmacy",
+      "copay": 10.00
+    },
+    {
+      "id": "rx002",
+      "dos": "2024-02-01",
+      "medication": "Metformin 500mg",
+      "dayssupply": 90,
+      "dosage": "500mg twice daily",
+      "quantity": 180,
+      "prescriber": "Dr. Johnson",
+      "pharmacy": "Walgreens",
+      "copay": 15.00
+    }
+  ],
+  "rxHistory": [
+    {
+      "id": "rxh001",
+      "dos": "2023-12-01",
+      "medication": "Atorvastatin 20mg",
+      "dayssupply": 30,
+      "dosage": "20mg daily",
+      "quantity": 30,
+      "prescriber": "Dr. Brown",
+      "pharmacy": "Rite Aid",
+      "copay": 5.00,
+      "fillDate": "2023-12-01",
+      "refillsRemaining": 2
+    },
+    {
+      "id": "rxh002",
+      "dos": "2023-11-15",
+      "medication": "Omeprazole 20mg",
+      "dayssupply": 30,
+      "dosage": "20mg daily",
+      "quantity": 30,
+      "prescriber": "Dr. Wilson",
+      "pharmacy": "Target Pharmacy",
+      "copay": 8.00,
+      "fillDate": "2023-11-15",
+      "refillsRemaining": 0
+    }
+  ],
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med001",
+        "claimDate": "2024-01-10",
+        "provider": "City Medical Center",
+        "totalAmount": 250.00,
+        "lines": [
+          {
+            "lineId": "line001",
+            "srvcStart": "2024-01-10",
+            "srvcEnd": "2024-01-10",
+            "description": "Annual Physical Exam",
+            "serviceType": "Preventive Care",
+            "procedureCode": "99395",
+            "chargedAmount": 250.00,
+            "allowedAmount": 200.00,
+            "paidAmount": 180.00
+          }
+        ]
+      },
+      {
+        "claimId": "med002",
+        "claimDate": "2024-01-20",
+        "provider": "Diagnostic Lab Services",
+        "totalAmount": 150.00,
+        "lines": [
+          {
+            "lineId": "line002",
+            "srvcStart": "2024-01-20",
+            "srvcEnd": "2024-01-20",
+            "description": "Blood Chemistry Panel",
+            "serviceType": "Laboratory",
+            "procedureCode": "80053",
+            "chargedAmount": 150.00,
+            "allowedAmount": 120.00,
+            "paidAmount": 108.00
+          }
+        ]
+      },
+      {
+        "claimId": "med003",
+        "claimDate": "2024-02-05",
+        "provider": "Cardiology Associates",
+        "totalAmount": 400.00,
+        "lines": [
+          {
+            "lineId": "line003",
+            "srvcStart": "2024-02-05",
+            "srvcEnd": "2024-02-05",
+            "description": "Echocardiogram",
+            "serviceType": "Diagnostic Imaging",
+            "procedureCode": "93306",
+            "chargedAmount": 400.00,
+            "allowedAmount": 320.00,
+            "paidAmount": 288.00
+          },
+          {
+            "lineId": "line004",
+            "srvcStart": "2024-02-05",
+            "srvcEnd": "2024-02-05",
+            "description": "Cardiology Consultation",
+            "serviceType": "Specialist Visit",
+            "procedureCode": "99244",
+            "chargedAmount": 200.00,
+            "allowedAmount": 160.00,
+            "paidAmount": 144.00
+          }
+        ]
+      }
+    ]
+  }
+}
