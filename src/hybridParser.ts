@@ -486,7 +486,8 @@ export class HybridParser {
      */
     private parseSimpleDate(dateValue: any, fallbackDate: string): Date {
         if (!dateValue) {
-            return new Date(fallbackDate);
+            const fallback = new Date(fallbackDate);
+            return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
         }
 
         const parsed = new Date(dateValue);
@@ -494,10 +495,12 @@ export class HybridParser {
             if (this.enableDiagnosticLogging) {
                 console.log(`HYBRID PARSER: Invalid date "${dateValue}", using fallback "${fallbackDate}"`);
             }
-            return new Date(fallbackDate);
+            const fallback = new Date(fallbackDate);
+            return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
         }
 
-        return parsed;
+        // Normalize to local midnight to avoid timezone issues
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
     }
 
     /**

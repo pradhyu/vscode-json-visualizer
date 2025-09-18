@@ -253,7 +253,7 @@ export class TimelineRenderer {
     }
 
     /**
-     * Generate HTML content for webview with improved JavaScript
+     * Generate HTML content for webview with interactive features
      */
     private getWebviewContent(): string {
         return `<!DOCTYPE html>
@@ -278,6 +278,8 @@ export class TimelineRenderer {
             border: 1px solid var(--vscode-panel-border);
             border-radius: 4px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .timeline-header {
             padding: 10px 15px;
@@ -286,6 +288,7 @@ export class TimelineRenderer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
         .timeline-title {
             font-size: 16px;
@@ -296,9 +299,80 @@ export class TimelineRenderer {
             font-size: 12px;
             color: var(--vscode-descriptionForeground);
         }
+        .timeline-controls {
+            padding: 10px 15px;
+            background-color: var(--vscode-sideBar-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-button {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 3px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .control-button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        .control-button:disabled {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            cursor: not-allowed;
+        }
+        .legend-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        .legend-item:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        .legend-item.hidden {
+            opacity: 0.5;
+        }
+        .legend-item.hidden .legend-text {
+            text-decoration: line-through;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid var(--vscode-panel-border);
+        }
+        .legend-text {
+            font-size: 12px;
+            user-select: none;
+        }
+        .legend-count {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-left: 4px;
+        }
         .timeline-content {
-            height: calc(100% - 50px);
+            flex: 1;
             position: relative;
+            overflow: hidden;
         }
         .timeline-svg {
             width: 100%;
@@ -320,14 +394,33 @@ export class TimelineRenderer {
             font-size: 14px;
             color: var(--vscode-errorForeground);
         }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 14px;
+            color: var(--vscode-descriptionForeground);
+        }
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
         .claim-bar {
             cursor: pointer;
             stroke-width: 1;
             stroke: var(--vscode-panel-border);
+            transition: all 0.2s ease;
         }
         .claim-bar:hover {
             stroke-width: 2;
             stroke: var(--vscode-focusBorder);
+        }
+        .claim-bar.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
         .axis {
             font-size: 11px;
@@ -351,6 +444,184 @@ export class TimelineRenderer {
             max-width: 300px;
             line-height: 1.4;
         }
+        
+        /* Table View Styles */
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+            margin-left: 15px;
+        }
+        .view-toggle-button {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 3px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .view-toggle-button.active {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .view-toggle-button:hover:not(.active) {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        
+        .table-view {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        .table-view.active {
+            display: flex;
+        }
+        
+        .table-controls {
+            padding: 10px;
+            background-color: var(--vscode-sideBar-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 3px;
+            padding: 6px 10px;
+            font-size: 12px;
+            min-width: 200px;
+            flex: 1;
+            max-width: 300px;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+        
+        .export-button {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 3px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .export-button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            background-color: var(--vscode-editor-background);
+        }
+        
+        .claims-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        .claims-table th {
+            background-color: var(--vscode-panel-background);
+            color: var(--vscode-editor-foreground);
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 2px solid var(--vscode-panel-border);
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        
+        .claims-table th:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        
+        .claims-table th.sortable::after {
+            content: ' ↕';
+            opacity: 0.5;
+            margin-left: 4px;
+        }
+        
+        .claims-table th.sorted-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+        
+        .claims-table th.sorted-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+        
+        .claims-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            vertical-align: top;
+        }
+        
+        .claims-table tr:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        
+        .claims-table tr.selected {
+            background-color: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+        }
+        
+        .claim-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            color: white;
+            text-transform: uppercase;
+        }
+        
+        .pagination {
+            padding: 10px;
+            background-color: var(--vscode-panel-background);
+            border-top: 1px solid var(--vscode-panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .pagination-button {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .pagination-button:hover:not(:disabled) {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -359,9 +630,68 @@ export class TimelineRenderer {
             <h2 class="timeline-title">Medical Claims Timeline</h2>
             <div id="stats" class="timeline-stats">Loading...</div>
         </div>
+        <div class="timeline-controls">
+            <div class="control-group">
+                <div class="view-toggle">
+                    <button id="timelineViewBtn" class="view-toggle-button active" title="Timeline View">📊 Timeline</button>
+                    <button id="tableViewBtn" class="view-toggle-button" title="Table View">📋 Table</button>
+                </div>
+                <button id="zoomIn" class="control-button" title="Zoom In">🔍+</button>
+                <button id="zoomOut" class="control-button" title="Zoom Out">🔍-</button>
+                <button id="resetZoom" class="control-button" title="Reset View">⌂</button>
+                <button id="panLeft" class="control-button" title="Pan Left">←</button>
+                <button id="panRight" class="control-button" title="Pan Right">→</button>
+            </div>
+            <div id="legend" class="legend-container">
+                <!-- Legend items will be populated dynamically -->
+            </div>
+        </div>
         <div class="timeline-content">
             <div id="loading" class="loading">Loading timeline data...</div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📊</div>
+                <div>No claims visible</div>
+                <div style="font-size: 12px; margin-top: 8px;">Enable claim types in the legend above</div>
+            </div>
             <svg id="timeline" class="timeline-svg" style="display: none;"></svg>
+            
+            <!-- Table View -->
+            <div id="tableView" class="table-view">
+                <div class="table-controls">
+                    <input type="text" id="searchBox" class="search-box" placeholder="Search claims..." />
+                    <button id="exportCsv" class="export-button" title="Export as CSV">📄 CSV</button>
+                    <button id="exportJson" class="export-button" title="Export as JSON">📄 JSON</button>
+                    <span id="tableStats" style="margin-left: auto; color: var(--vscode-descriptionForeground);"></span>
+                </div>
+                <div class="table-container">
+                    <table id="claimsTable" class="claims-table">
+                        <thead>
+                            <tr>
+                                <th data-column="id" class="sortable">ID</th>
+                                <th data-column="type" class="sortable">Type</th>
+                                <th data-column="displayName" class="sortable">Name</th>
+                                <th data-column="startDate" class="sortable">Start Date</th>
+                                <th data-column="endDate" class="sortable">End Date</th>
+                                <th data-column="duration" class="sortable">Duration</th>
+                                <th data-column="details" class="">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="claimsTableBody">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="pagination" class="pagination" style="display: none;">
+                    <div id="paginationInfo"></div>
+                    <div class="pagination-controls">
+                        <button id="firstPage" class="pagination-button">⏮</button>
+                        <button id="prevPage" class="pagination-button">◀</button>
+                        <span id="pageInfo"></span>
+                        <button id="nextPage" class="pagination-button">▶</button>
+                        <button id="lastPage" class="pagination-button">⏭</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -372,11 +702,28 @@ export class TimelineRenderer {
         let xScale = null;
         let yScale = null;
         let zoom = null;
-
+        let currentTransform = d3.zoomIdentity;
+        
+        // Interactive state
+        let visibleClaimTypes = new Set();
+        let claimTypeConfigs = new Map();
+        
+        // Table view state
+        let currentView = 'timeline';
+        let tableState = {
+            sortColumn: 'startDate',
+            sortDirection: 'desc',
+            searchQuery: '',
+            currentPage: 1,
+            pageSize: 50
+        };
+        let filteredClaims = [];
+        
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             console.log('WEBVIEW DIAGNOSTIC: DOM loaded, initializing timeline');
             initializeTimeline();
+            initializeControls();
         });
 
         // Listen for messages from extension
@@ -406,7 +753,14 @@ export class TimelineRenderer {
                     throw new Error('Timeline SVG element not found');
                 }
 
-                console.log('WEBVIEW DIAGNOSTIC: SVG element found');
+                // Initialize zoom behavior
+                zoom = d3.zoom()
+                    .scaleExtent([0.1, 10])
+                    .on('zoom', handleZoom);
+
+                svg.call(zoom);
+
+                console.log('WEBVIEW DIAGNOSTIC: SVG element found and zoom initialized');
 
                 vscode.postMessage({
                     command: 'ready',
@@ -425,6 +779,80 @@ export class TimelineRenderer {
                         details: { error: error.message }
                     }
                 });
+            }
+        }
+
+        function initializeControls() {
+            // View toggle controls
+            document.getElementById('timelineViewBtn').addEventListener('click', () => switchView('timeline'));
+            document.getElementById('tableViewBtn').addEventListener('click', () => switchView('table'));
+            
+            // Zoom controls
+            document.getElementById('zoomIn').addEventListener('click', () => {
+                svg.transition().duration(300).call(zoom.scaleBy, 1.5);
+            });
+
+            document.getElementById('zoomOut').addEventListener('click', () => {
+                svg.transition().duration(300).call(zoom.scaleBy, 1 / 1.5);
+            });
+
+            document.getElementById('resetZoom').addEventListener('click', () => {
+                svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+            });
+
+            // Pan controls
+            document.getElementById('panLeft').addEventListener('click', () => {
+                const width = svg.node().clientWidth;
+                svg.transition().duration(300).call(zoom.translateBy, width * 0.2, 0);
+            });
+
+            document.getElementById('panRight').addEventListener('click', () => {
+                const width = svg.node().clientWidth;
+                svg.transition().duration(300).call(zoom.translateBy, -width * 0.2, 0);
+            });
+            
+            // Table controls
+            document.getElementById('searchBox').addEventListener('input', (e) => {
+                tableState.searchQuery = e.target.value;
+                tableState.currentPage = 1;
+                renderTable();
+            });
+            
+            document.getElementById('exportCsv').addEventListener('click', () => exportData('csv'));
+            document.getElementById('exportJson').addEventListener('click', () => exportData('json'));
+            
+            // Table sorting
+            document.querySelectorAll('.claims-table th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const column = th.getAttribute('data-column');
+                    handleSort(column);
+                });
+            });
+            
+            // Pagination controls
+            document.getElementById('firstPage').addEventListener('click', () => goToPage(1));
+            document.getElementById('prevPage').addEventListener('click', () => goToPage(tableState.currentPage - 1));
+            document.getElementById('nextPage').addEventListener('click', () => goToPage(tableState.currentPage + 1));
+            document.getElementById('lastPage').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredClaims.length / tableState.pageSize);
+                goToPage(totalPages);
+            });
+        }
+
+        function handleZoom(event) {
+            currentTransform = event.transform;
+            
+            if (xScale) {
+                const newXScale = currentTransform.rescaleX(xScale);
+                
+                // Update timeline elements with new scale
+                svg.selectAll('.claim-bar')
+                    .attr('x', d => newXScale(new Date(d.startDate)))
+                    .attr('width', d => Math.max(1, newXScale(new Date(d.endDate)) - newXScale(new Date(d.startDate))));
+                
+                // Update x-axis
+                svg.select('.x-axis')
+                    .call(d3.axisBottom(newXScale));
             }
         }
 
@@ -515,12 +943,16 @@ export class TimelineRenderer {
                     return;
                 }
 
+                // Initialize claim type configurations and visibility
+                initializeClaimTypes();
+                
                 const loadingElement = document.getElementById('loading');
                 const timelineElement = document.getElementById('timeline');
 
                 if (loadingElement) loadingElement.style.display = 'none';
                 if (timelineElement) timelineElement.style.display = 'block';
 
+                renderLegend();
                 renderTimeline();
                 updateStats();
                 
@@ -537,6 +969,115 @@ export class TimelineRenderer {
                         message: error.message
                     }
                 });
+            }
+        }
+
+        function initializeClaimTypes() {
+            // Group claims by type and count them
+            const typeCounts = {};
+            timelineData.claims.forEach(claim => {
+                typeCounts[claim.type] = (typeCounts[claim.type] || 0) + 1;
+            });
+
+            // Initialize claim type configurations
+            claimTypeConfigs.clear();
+            visibleClaimTypes.clear();
+
+            const typeDisplayNames = {
+                'rxTba': 'Current Prescriptions',
+                'rxHistory': 'Prescription History',
+                'medHistory': 'Medical Services',
+                'unknown': 'Other Claims'
+            };
+
+            Object.keys(typeCounts).forEach(type => {
+                const config = {
+                    type: type,
+                    displayName: typeDisplayNames[type] || type,
+                    count: typeCounts[type],
+                    color: timelineData.claims.find(c => c.type === type)?.color || '#95A5A6',
+                    visible: true
+                };
+                
+                claimTypeConfigs.set(type, config);
+                visibleClaimTypes.add(type);
+            });
+        }
+
+        function renderLegend() {
+            const legendContainer = document.getElementById('legend');
+            legendContainer.innerHTML = '';
+
+            claimTypeConfigs.forEach((config, type) => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.setAttribute('data-type', type);
+                
+                if (!config.visible) {
+                    legendItem.classList.add('hidden');
+                }
+
+                legendItem.innerHTML = \`
+                    <div class="legend-color" style="background-color: \${config.color}"></div>
+                    <span class="legend-text">\${config.displayName}</span>
+                    <span class="legend-count">(\${config.count})</span>
+                \`;
+
+                legendItem.addEventListener('click', () => toggleClaimType(type));
+                
+                legendItem.title = \`Click to \${config.visible ? 'hide' : 'show'} \${config.displayName}\`;
+
+                legendContainer.appendChild(legendItem);
+            });
+        }
+
+        function toggleClaimType(type) {
+            const config = claimTypeConfigs.get(type);
+            if (!config) return;
+
+            config.visible = !config.visible;
+            
+            if (config.visible) {
+                visibleClaimTypes.add(type);
+            } else {
+                visibleClaimTypes.delete(type);
+            }
+
+            // Update legend visual state
+            const legendItem = document.querySelector(\`[data-type="\${type}"]\`);
+            if (legendItem) {
+                legendItem.classList.toggle('hidden', !config.visible);
+                legendItem.title = \`Click to \${config.visible ? 'hide' : 'show'} \${config.displayName}\`;
+            }
+
+            // Update timeline
+            updateTimelineVisibility();
+            updateStats();
+        }
+
+        function updateTimelineVisibility() {
+            if (visibleClaimTypes.size === 0) {
+                // Show empty state
+                if (currentView === 'timeline') {
+                    document.getElementById('timeline').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'flex';
+                }
+                return;
+            }
+
+            if (currentView === 'timeline') {
+                document.getElementById('timeline').style.display = 'block';
+                document.getElementById('emptyState').style.display = 'none';
+
+                // Update claim bar visibility with animation
+                svg.selectAll('.claim-bar')
+                    .transition()
+                    .duration(300)
+                    .style('opacity', d => visibleClaimTypes.has(d.type) ? 1 : 0)
+                    .style('pointer-events', d => visibleClaimTypes.has(d.type) ? 'all' : 'none');
+            } else if (currentView === 'table') {
+                // Update table view
+                renderTable();
             }
         }
 
@@ -690,9 +1231,22 @@ export class TimelineRenderer {
             const stats = document.getElementById('stats');
             const dateRange = timelineData.dateRange.start.toLocaleDateString() + ' - ' + timelineData.dateRange.end.toLocaleDateString();
             
-            stats.innerHTML = '<strong>' + timelineData.metadata.totalClaims + '</strong> claims | ' +
-                '<strong>' + timelineData.metadata.claimTypes.length + '</strong> types | ' +
-                '<span style="color: var(--vscode-descriptionForeground);">' + dateRange + '</span>';
+            // Count visible claims
+            const visibleClaims = timelineData.claims.filter(claim => visibleClaimTypes.has(claim.type));
+            const visibleCount = visibleClaims.length;
+            const totalCount = timelineData.metadata.totalClaims;
+            
+            let statsText = '';
+            if (visibleCount === totalCount) {
+                statsText = '<strong>' + totalCount + '</strong> claims';
+            } else {
+                statsText = '<strong>' + visibleCount + '</strong> of <strong>' + totalCount + '</strong> claims';
+            }
+            
+            statsText += ' | <strong>' + visibleClaimTypes.size + '</strong> of <strong>' + timelineData.metadata.claimTypes.length + '</strong> types visible';
+            statsText += ' | <span style="color: var(--vscode-descriptionForeground);">' + dateRange + '</span>';
+            
+            stats.innerHTML = statsText;
         }
 
         function showError(message) {
@@ -729,6 +1283,248 @@ export class TimelineRenderer {
         function showErrorInWebview(errorPayload) {
             const message = errorPayload.message || 'Unknown error occurred';
             showError(message);
+        }
+
+        // Table View Functions
+        function switchView(view) {
+            currentView = view;
+            
+            // Update button states
+            document.getElementById('timelineViewBtn').classList.toggle('active', view === 'timeline');
+            document.getElementById('tableViewBtn').classList.toggle('active', view === 'table');
+            
+            // Show/hide views
+            if (view === 'timeline') {
+                document.getElementById('timeline').style.display = 'block';
+                document.getElementById('tableView').classList.remove('active');
+                document.getElementById('emptyState').style.display = visibleClaimTypes.size === 0 ? 'flex' : 'none';
+            } else {
+                document.getElementById('timeline').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('tableView').classList.add('active');
+                renderTable();
+            }
+        }
+
+        function renderTable() {
+            if (!timelineData || !timelineData.claims) return;
+            
+            // Filter claims based on visibility and search
+            filteredClaims = timelineData.claims.filter(claim => {
+                // Check visibility
+                if (!visibleClaimTypes.has(claim.type)) return false;
+                
+                // Check search query
+                if (tableState.searchQuery) {
+                    const query = tableState.searchQuery.toLowerCase();
+                    const searchableText = [
+                        claim.id,
+                        claim.type,
+                        claim.displayName,
+                        claim.startDate.toLocaleDateString(),
+                        claim.endDate.toLocaleDateString(),
+                        JSON.stringify(claim.details)
+                    ].join(' ').toLowerCase();
+                    
+                    if (!searchableText.includes(query)) return false;
+                }
+                
+                return true;
+            });
+            
+            // Sort claims
+            filteredClaims.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch (tableState.sortColumn) {
+                    case 'startDate':
+                    case 'endDate':
+                        aVal = new Date(a[tableState.sortColumn]).getTime();
+                        bVal = new Date(b[tableState.sortColumn]).getTime();
+                        break;
+                    case 'duration':
+                        aVal = new Date(a.endDate).getTime() - new Date(a.startDate).getTime();
+                        bVal = new Date(b.endDate).getTime() - new Date(b.startDate).getTime();
+                        break;
+                    default:
+                        aVal = String(a[tableState.sortColumn] || '').toLowerCase();
+                        bVal = String(b[tableState.sortColumn] || '').toLowerCase();
+                }
+                
+                if (aVal < bVal) return tableState.sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return tableState.sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            // Update sort indicators
+            document.querySelectorAll('.claims-table th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                if (th.getAttribute('data-column') === tableState.sortColumn) {
+                    th.classList.add('sorted-' + tableState.sortDirection);
+                }
+            });
+            
+            // Render table rows
+            renderTableRows();
+            updateTableStats();
+            renderPagination();
+        }
+
+        function renderTableRows() {
+            const tbody = document.getElementById('claimsTableBody');
+            tbody.innerHTML = '';
+            
+            const startIndex = (tableState.currentPage - 1) * tableState.pageSize;
+            const endIndex = Math.min(startIndex + tableState.pageSize, filteredClaims.length);
+            const pageData = filteredClaims.slice(startIndex, endIndex);
+            
+            pageData.forEach(claim => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-claim-id', claim.id);
+                row.addEventListener('click', () => selectTableRow(claim.id));
+                
+                const duration = Math.ceil((new Date(claim.endDate).getTime() - new Date(claim.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                
+                // Format details for display
+                const detailsText = Object.entries(claim.details || {})
+                    .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                    .map(([key, value]) => \`\${key}: \${value}\`)
+                    .join(', ');
+                
+                row.innerHTML = \`
+                    <td>\${claim.id}</td>
+                    <td><span class="claim-type-badge" style="background-color: \${claim.color}">\${claim.type}</span></td>
+                    <td>\${claim.displayName}</td>
+                    <td>\${new Date(claim.startDate).toLocaleDateString()}</td>
+                    <td>\${new Date(claim.endDate).toLocaleDateString()}</td>
+                    <td>\${duration} day\${duration !== 1 ? 's' : ''}</td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;" title="\${detailsText}">\${detailsText}</td>
+                \`;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function selectTableRow(claimId) {
+            // Remove previous selection
+            document.querySelectorAll('.claims-table tr.selected').forEach(row => {
+                row.classList.remove('selected');
+            });
+            
+            // Add selection to clicked row
+            const row = document.querySelector(\`[data-claim-id="\${claimId}"]\`);
+            if (row) {
+                row.classList.add('selected');
+            }
+            
+            // Send selection message to extension
+            vscode.postMessage({
+                command: 'select',
+                payload: claimId
+            });
+        }
+
+        function handleSort(column) {
+            if (tableState.sortColumn === column) {
+                tableState.sortDirection = tableState.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                tableState.sortColumn = column;
+                tableState.sortDirection = 'asc';
+            }
+            
+            tableState.currentPage = 1;
+            renderTable();
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredClaims.length / tableState.pageSize);
+            if (page < 1 || page > totalPages) return;
+            
+            tableState.currentPage = page;
+            renderTable();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredClaims.length / tableState.pageSize);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.style.display = 'none';
+                return;
+            }
+            
+            pagination.style.display = 'flex';
+            
+            // Update pagination info
+            const startItem = (tableState.currentPage - 1) * tableState.pageSize + 1;
+            const endItem = Math.min(tableState.currentPage * tableState.pageSize, filteredClaims.length);
+            
+            document.getElementById('paginationInfo').textContent = 
+                \`Showing \${startItem}-\${endItem} of \${filteredClaims.length} claims\`;
+            
+            document.getElementById('pageInfo').textContent = 
+                \`Page \${tableState.currentPage} of \${totalPages}\`;
+            
+            // Update button states
+            document.getElementById('firstPage').disabled = tableState.currentPage === 1;
+            document.getElementById('prevPage').disabled = tableState.currentPage === 1;
+            document.getElementById('nextPage').disabled = tableState.currentPage === totalPages;
+            document.getElementById('lastPage').disabled = tableState.currentPage === totalPages;
+        }
+
+        function updateTableStats() {
+            const stats = document.getElementById('tableStats');
+            if (filteredClaims.length === timelineData.claims.length) {
+                stats.textContent = \`\${filteredClaims.length} claims\`;
+            } else {
+                stats.textContent = \`\${filteredClaims.length} of \${timelineData.claims.length} claims\`;
+            }
+        }
+
+        function exportData(format) {
+            if (!filteredClaims.length) {
+                alert('No data to export');
+                return;
+            }
+            
+            let content, filename, mimeType;
+            
+            if (format === 'csv') {
+                const headers = ['ID', 'Type', 'Name', 'Start Date', 'End Date', 'Duration (days)', 'Details'];
+                const rows = filteredClaims.map(claim => {
+                    const duration = Math.ceil((new Date(claim.endDate).getTime() - new Date(claim.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                    const details = Object.entries(claim.details || {})
+                        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                        .map(([key, value]) => \`\${key}: \${value}\`)
+                        .join('; ');
+                    
+                    return [
+                        claim.id,
+                        claim.type,
+                        claim.displayName,
+                        new Date(claim.startDate).toLocaleDateString(),
+                        new Date(claim.endDate).toLocaleDateString(),
+                        duration,
+                        details
+                    ].map(field => \`"\${String(field).replace(/"/g, '""')}"\`).join(',');
+                });
+                
+                content = [headers.join(','), ...rows].join('\\n');
+                filename = 'claims-export.csv';
+                mimeType = 'text/csv';
+            } else {
+                content = JSON.stringify(filteredClaims, null, 2);
+                filename = 'claims-export.json';
+                mimeType = 'application/json';
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>

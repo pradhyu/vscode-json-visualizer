@@ -212,7 +212,9 @@ export class FieldExtractor {
         // Try primary format first
         let date = moment(dateStr, primaryFormat, true);
         if (date.isValid()) {
-            return date.toDate();
+            const parsed = date.toDate();
+            // Normalize to local midnight to avoid timezone issues
+            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
         }
 
         // Try other common formats
@@ -220,14 +222,18 @@ export class FieldExtractor {
         for (const format of formats) {
             date = moment(dateStr, format, true);
             if (date.isValid()) {
-                return date.toDate();
+                const parsed = date.toDate();
+                // Normalize to local midnight to avoid timezone issues
+                return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
             }
         }
 
         // Try ISO parsing as last resort
         date = moment(dateStr);
         if (date.isValid()) {
-            return date.toDate();
+            const parsed = date.toDate();
+            // Normalize to local midnight to avoid timezone issues
+            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
         }
 
         return null;

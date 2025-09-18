@@ -271,6 +271,16 @@ export class DateParseError extends ParseError {
             'Check your date values',
             'Ensure dates are valid calendar dates'
         ];
+        
+        // Set context if provided
+        if (details?.claimType || details?.claimIndex !== undefined || details?.fieldName || details?.fieldValue) {
+            this.context = {
+                claimType: details.claimType,
+                claimIndex: details.claimIndex,
+                fieldName: details.fieldName,
+                fieldValue: details.fieldValue
+            };
+        }
     }
 }
 

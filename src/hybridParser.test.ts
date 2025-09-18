@@ -83,6 +83,17 @@ describe('HybridParser', () => {
     it('should handle invalid file gracefully', async () => {
         const invalidPath = 'non-existent-file.json';
         
+        // Mock fs to throw ENOENT error for non-existent file
+        const mockError = new Error('ENOENT: no such file or directory');
+        (mockError as any).code = 'ENOENT';
+        
+        vi.mocked(fs.readFileSync).mockImplementation((path) => {
+            if (path === invalidPath) {
+                throw mockError;
+            }
+            return '{"rxTba": [{"id": "rx1", "dos": "2024-01-15", "dayssupply": 30, "medication": "Test Med"}]}';
+        });
+        
         await expect(hybridParser.parseFile(invalidPath)).rejects.toThrow();
     });
 

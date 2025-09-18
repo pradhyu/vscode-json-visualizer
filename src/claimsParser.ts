@@ -544,9 +544,39 @@ export class ClaimsParser {
                 });
             }
 
-            // Ensure dates are Date objects (not ISO strings)
-            const startDate = claim.startDate instanceof Date ? claim.startDate : new Date(claim.startDate);
-            const endDate = claim.endDate instanceof Date ? claim.endDate : new Date(claim.endDate);
+            // Ensure dates are Date objects with consistent timezone handling
+            let startDate: Date;
+            let endDate: Date;
+            
+            if (claim.startDate instanceof Date) {
+                // Normalize to UTC midnight to avoid timezone issues
+                startDate = new Date(claim.startDate.getFullYear(), claim.startDate.getMonth(), claim.startDate.getDate());
+            } else if (typeof claim.startDate === 'string') {
+                // Parse date string and normalize to UTC midnight
+                const parsed = new Date(claim.startDate);
+                startDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+            } else {
+                throw new Error(`Invalid startDate type: ${typeof claim.startDate}`);
+            }
+            
+            if (claim.endDate instanceof Date) {
+                // Normalize to UTC midnight to avoid timezone issues
+                endDate = new Date(claim.endDate.getFullYear(), claim.endDate.getMonth(), claim.endDate.getDate());
+            } else if (typeof claim.endDate === 'string') {
+                // Parse date string and normalize to UTC midnight
+                const parsed = new Date(claim.endDate);
+                endDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+            } else {
+                throw new Error(`Invalid endDate type: ${typeof claim.endDate}`);
+            }
+
+            // Validate dates are valid
+            if (isNaN(startDate.getTime())) {
+                throw new Error(`Invalid startDate: ${claim.startDate}`);
+            }
+            if (isNaN(endDate.getTime())) {
+                throw new Error(`Invalid endDate: ${claim.endDate}`);
+            }
             
             const standardizedClaim: ClaimItem = {
                 id: claim.id,
@@ -667,6 +697,15 @@ export class ClaimsParser {
                 try {
                     startDate = this.parseDate(claim.dos);
                 } catch (dateError) {
+                    // Add context to DateParseError
+                    if (dateError instanceof DateParseError) {
+                        dateError.context = {
+                            claimType: type,
+                            claimIndex: index,
+                            fieldName: 'dos',
+                            fieldValue: claim.dos
+                        };
+                    }
                     // Try fallback date fields
                     const fallbackDate = this.tryFallbackDateFields(claim, ['fillDate', 'prescriptionDate', 'serviceDate']);
                     if (fallbackDate) {
@@ -713,7 +752,19 @@ export class ClaimsParser {
                     type,
                     startDate,
                     endDate,
-                    details: { ...claim },
+                    details: {
+                        medication: claim.medication || displayName,
+                        dosage: claim.dosage || 'N/A',
+                        daysSupply: daysSupply,
+                        prescriber: claim.prescriber || 'N/A',
+                        quantity: claim.quantity || 'N/A',
+                        pharmacy: claim.pharmacy || 'N/A',
+                        copay: claim.copay || 'N/A',
+                        ndc: claim.ndc || 'N/A',
+                        fillDate: claim.fillDate || 'N/A',
+                        refillsRemaining: claim.refillsRemaining || 'N/A',
+                        ...claim // Include original data as well
+                    },
                     displayName,
                     color
                 });
@@ -969,11 +1020,11 @@ export class ClaimsParser {
         // Get unique claim types
         const claimTypes = Array.from(new Set(claims.map(claim => claim.type)));
 
-        // Sort claims by start date (most recent first) - handle both Date objects and ISO strings
+        // Sort claims by start date (oldest first) for consistent ordering
         const sortedClaims = claims.sort((a, b) => {
             const aStartDate = a.startDate instanceof Date ? a.startDate : new Date(a.startDate);
             const bStartDate = b.startDate instanceof Date ? b.startDate : new Date(b.startDate);
-            return bStartDate.getTime() - aStartDate.getTime();
+            return aStartDate.getTime() - bStartDate.getTime();
         });
 
         return {
