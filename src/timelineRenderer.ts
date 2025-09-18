@@ -331,6 +331,17 @@ export class TimelineRenderer {
             color: var(--vscode-button-secondaryForeground);
             cursor: not-allowed;
         }
+        
+        .zoom-info {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            padding: 6px 8px;
+            background-color: var(--vscode-badge-background);
+            border-radius: 3px;
+            min-width: 40px;
+            text-align: center;
+            user-select: none;
+        }
         .legend-container {
             display: flex;
             gap: 15px;
@@ -377,6 +388,11 @@ export class TimelineRenderer {
         .timeline-svg {
             width: 100%;
             height: 100%;
+            cursor: grab;
+        }
+        
+        .timeline-svg:active {
+            cursor: grabbing;
         }
         .loading {
             display: flex;
@@ -622,6 +638,25 @@ export class TimelineRenderer {
             opacity: 0.5;
             cursor: not-allowed;
         }
+        
+        .zoom-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--vscode-notifications-background);
+            border: 1px solid var(--vscode-notifications-border);
+            border-radius: 4px;
+            padding: 8px 12px;
+            z-index: 100;
+            opacity: 0.9;
+            animation: fadeInOut 4s ease-in-out;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            20%, 80% { opacity: 0.9; }
+        }
     </style>
 </head>
 <body>
@@ -636,11 +671,12 @@ export class TimelineRenderer {
                     <button id="timelineViewBtn" class="view-toggle-button active" title="Timeline View">📊 Timeline</button>
                     <button id="tableViewBtn" class="view-toggle-button" title="Table View">📋 Table</button>
                 </div>
-                <button id="zoomIn" class="control-button" title="Zoom In">🔍+</button>
-                <button id="zoomOut" class="control-button" title="Zoom Out">🔍-</button>
-                <button id="resetZoom" class="control-button" title="Reset View">⌂</button>
-                <button id="panLeft" class="control-button" title="Pan Left">←</button>
-                <button id="panRight" class="control-button" title="Pan Right">→</button>
+                <button id="zoomIn" class="control-button" title="Zoom In (+)">🔍+</button>
+                <button id="zoomOut" class="control-button" title="Zoom Out (-)">🔍-</button>
+                <button id="resetZoom" class="control-button" title="Reset View (0)">⌂</button>
+                <button id="panLeft" class="control-button" title="Pan Left (Shift+←)">←</button>
+                <button id="panRight" class="control-button" title="Pan Right (Shift+→)">→</button>
+                <div class="zoom-info" id="zoomInfo" title="Current zoom level">100%</div>
             </div>
             <div id="legend" class="legend-container">
                 <!-- Legend items will be populated dynamically -->
@@ -652,6 +688,11 @@ export class TimelineRenderer {
                 <div class="empty-state-icon">📊</div>
                 <div>No claims visible</div>
                 <div style="font-size: 12px; margin-top: 8px;">Enable claim types in the legend above</div>
+            </div>
+            <div id="zoomHint" class="zoom-hint" style="display: none;">
+                <div style="font-size: 11px; color: var(--vscode-descriptionForeground); text-align: center; padding: 5px;">
+                    💡 <strong>Mouse:</strong> Scroll to zoom, drag to pan, double-click to fit | <strong>Keys:</strong> +/- to zoom, 0 to reset, Shift+arrows to pan
+                </div>
             </div>
             <svg id="timeline" class="timeline-svg" style="display: none;"></svg>
             
@@ -753,12 +794,19 @@ export class TimelineRenderer {
                     throw new Error('Timeline SVG element not found');
                 }
 
-                // Initialize zoom behavior
+                // Initialize enhanced zoom behavior with mouse controls
                 zoom = d3.zoom()
                     .scaleExtent([0.1, 10])
-                    .on('zoom', handleZoom);
+                    .wheelDelta(function(event) {
+                        // Custom wheel delta for smoother zooming
+                        return -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002);
+                    })
+                    .on('zoom', handleZoom)
+                    .on('start', handleZoomStart)
+                    .on('end', handleZoomEnd);
 
-                svg.call(zoom);
+                svg.call(zoom)
+                    .on('dblclick.zoom', handleDoubleClick); // Custom double-click behavior
 
                 console.log('WEBVIEW DIAGNOSTIC: SVG element found and zoom initialized');
 
@@ -837,6 +885,44 @@ export class TimelineRenderer {
                 const totalPages = Math.ceil(filteredClaims.length / tableState.pageSize);
                 goToPage(totalPages);
             });
+            
+            // Keyboard shortcuts for zoom and pan
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+        }
+
+        function handleKeyboardShortcuts(event) {
+            // Only handle shortcuts when timeline is visible and not typing in inputs
+            if (currentView !== 'timeline' || event.target.tagName === 'INPUT') return;
+            
+            switch(event.key) {
+                case '+':
+                case '=':
+                    event.preventDefault();
+                    svg.transition().duration(200).call(zoom.scaleBy, 1.2);
+                    break;
+                case '-':
+                    event.preventDefault();
+                    svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.2);
+                    break;
+                case '0':
+                    event.preventDefault();
+                    svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+                    break;
+                case 'ArrowLeft':
+                    if (event.shiftKey) {
+                        event.preventDefault();
+                        const width = svg.node().clientWidth;
+                        svg.transition().duration(200).call(zoom.translateBy, width * 0.1, 0);
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (event.shiftKey) {
+                        event.preventDefault();
+                        const width = svg.node().clientWidth;
+                        svg.transition().duration(200).call(zoom.translateBy, -width * 0.1, 0);
+                    }
+                    break;
+            }
         }
 
         function handleZoom(event) {
@@ -845,15 +931,80 @@ export class TimelineRenderer {
             if (xScale) {
                 const newXScale = currentTransform.rescaleX(xScale);
                 
-                // Update timeline elements with new scale
+                // Update timeline elements with smooth transitions
                 svg.selectAll('.claim-bar')
                     .attr('x', d => newXScale(new Date(d.startDate)))
                     .attr('width', d => Math.max(1, newXScale(new Date(d.endDate)) - newXScale(new Date(d.startDate))));
                 
-                // Update x-axis
+                // Update x-axis with YYYY-MM-DD format
+                const tickCount = Math.max(3, Math.min(15, Math.floor(currentTransform.k * 8)));
+                const xAxis = d3.axisBottom(newXScale)
+                    .ticks(tickCount)
+                    .tickFormat(d3.timeFormat('%Y-%m-%d'));
+                
                 svg.select('.x-axis')
-                    .call(d3.axisBottom(newXScale));
+                    .call(xAxis);
+                
+                // Update zoom level indicator
+                updateZoomIndicator(currentTransform.k);
             }
+        }
+
+        function handleZoomStart(event) {
+            // Add visual feedback when zooming starts
+            svg.style('cursor', event.sourceEvent?.type === 'wheel' ? 'zoom-in' : 'grabbing');
+        }
+
+        function handleZoomEnd(event) {
+            // Reset cursor when zooming ends
+            svg.style('cursor', 'grab');
+            
+            // Snap to reasonable zoom levels if close
+            const k = event.transform.k;
+            if (Math.abs(k - 1) < 0.1) {
+                svg.transition().duration(200).call(zoom.scaleTo, 1);
+            }
+        }
+
+        function handleDoubleClick(event) {
+            // Double-click to zoom to fit or reset
+            event.preventDefault();
+            
+            if (currentTransform.k === 1) {
+                // If at default zoom, zoom in to 2x
+                svg.transition().duration(300).call(zoom.scaleTo, 2);
+            } else {
+                // If zoomed, reset to fit
+                svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+            }
+        }
+
+        function updateZoomIndicator(zoomLevel) {
+            // Update zoom level display in controls
+            let zoomText = '';
+            if (zoomLevel < 0.5) {
+                zoomText = 'Zoomed Out';
+            } else if (zoomLevel > 2) {
+                zoomText = 'Zoomed In';
+            } else {
+                zoomText = 'Normal';
+            }
+            
+            // Update zoom percentage display
+            const zoomInfo = document.getElementById('zoomInfo');
+            if (zoomInfo) {
+                zoomInfo.textContent = \`\${Math.round(zoomLevel * 100)}%\`;
+                zoomInfo.title = \`Current zoom level: \${Math.round(zoomLevel * 100)}% (\${zoomText})\`;
+            }
+            
+            // Update button titles with current zoom level
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const resetBtn = document.getElementById('resetZoom');
+            
+            if (zoomInBtn) zoomInBtn.title = \`Zoom In (+) - Current: \${Math.round(zoomLevel * 100)}%\`;
+            if (zoomOutBtn) zoomOutBtn.title = \`Zoom Out (-) - Current: \${Math.round(zoomLevel * 100)}%\`;
+            if (resetBtn) resetBtn.title = \`Reset View (0) - \${zoomText}\`;
         }
 
         function updateTimelineData(data) {
@@ -955,6 +1106,17 @@ export class TimelineRenderer {
                 renderLegend();
                 renderTimeline();
                 updateStats();
+                
+                // Show zoom hint for first-time users
+                setTimeout(() => {
+                    const hint = document.getElementById('zoomHint');
+                    if (hint && currentView === 'timeline') {
+                        hint.style.display = 'block';
+                        setTimeout(() => {
+                            hint.style.display = 'none';
+                        }, 4000);
+                    }
+                }, 1000);
                 
                 console.log('=== WEBVIEW DIAGNOSTIC: updateTimelineData completed successfully ===');
 
@@ -1124,7 +1286,7 @@ export class TimelineRenderer {
                     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
                 const xAxis = d3.axisBottom(xScale)
-                    .tickFormat(d3.timeFormat('%m/%d/%y'))
+                    .tickFormat(d3.timeFormat('%Y-%m-%d'))
                     .ticks(Math.min(10, Math.floor(innerWidth / 80)));
 
                 const yAxis = d3.axisLeft(yScale)
