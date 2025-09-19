@@ -19,14 +19,14 @@
   - Analyze validation logic in ClaimsParser and HybridParser
   - _Requirements: 2.1, 2.2, 4.1, 4.2_
 
-- [-] 4. Fix ClaimsParser test suite (9 failing tests)
+- [x] 4. Fix ClaimsParser test suite (9 failing tests)
   - Update date expectations to match parser's timezone normalization
   - Fix sorting order expectations in timeline data generation tests
   - Correct extractClaims test expectations for all claim types
   - Update date parsing tests to expect normalized dates
   - _Requirements: 1.1, 1.2, 2.1, 2.2_
 
-- [ ] 5. Fix error handling test suites (12 failing tests)
+- [-] 5. Fix error handling test suites (12 failing tests)
   - Update error type expectations to match actual implementation
   - Fix date format validation test expectations
   - Correct fallback mechanism test expectations

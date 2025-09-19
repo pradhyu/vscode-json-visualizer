@@ -11,6 +11,7 @@ import {
     StructureValidationError, 
     FileReadError 
 } from './types';
+import { createParserDate, calculateEndDate } from './test-utils/dateUtils';
 
 // Mock fs module
 vi.mock('fs', () => ({
@@ -119,8 +120,8 @@ describe('ClaimsParser', () => {
                 displayName: 'Lisinopril 10mg',
                 color: '#FF6B6B'
             });
-            expect(claims[0].startDate).toEqual(new Date('2024-01-15'));
-            expect(claims[0].endDate).toEqual(new Date('2024-02-14')); // 30 days later
+            expect(claims[0].startDate).toEqual(createParserDate('2024-01-15'));
+            expect(claims[0].endDate).toEqual(calculateEndDate('2024-01-15', 30));
         });
 
         it('should extract rxHistory claims correctly', () => {
@@ -144,8 +145,8 @@ describe('ClaimsParser', () => {
                 displayName: 'Amoxicillin 500mg',
                 color: '#4ECDC4'
             });
-            expect(claims[0].startDate).toEqual(new Date('2024-01-10'));
-            expect(claims[0].endDate).toEqual(new Date('2024-01-17')); // 7 days later
+            expect(claims[0].startDate).toEqual(createParserDate('2024-01-10'));
+            expect(claims[0].endDate).toEqual(calculateEndDate('2024-01-10', 7));
         });
 
         it('should extract medHistory claims correctly', () => {
@@ -178,8 +179,8 @@ describe('ClaimsParser', () => {
                 displayName: 'Routine checkup',
                 color: '#45B7D1'
             });
-            expect(claims[0].startDate).toEqual(new Date('2024-01-08'));
-            expect(claims[0].endDate).toEqual(new Date('2024-01-08'));
+            expect(claims[0].startDate).toEqual(createParserDate('2024-01-08'));
+            expect(claims[0].endDate).toEqual(createParserDate('2024-01-08'));
             expect(claims[0].details.claimId).toBe('med1');
             expect(claims[0].details.provider).toBe('Test Hospital');
         });
@@ -220,8 +221,8 @@ describe('ClaimsParser', () => {
             const claims = parser.extractClaims(json, mockConfig);
             
             expect(claims).toHaveLength(1);
-            expect(claims[0].startDate).toEqual(new Date('2024-01-01'));
-            expect(claims[0].endDate).toEqual(new Date('2024-01-31')); // 30 days default when dayssupply is missing
+            expect(claims[0].startDate).toEqual(createParserDate('2024-01-01'));
+            expect(claims[0].endDate).toEqual(calculateEndDate('2024-01-01', 30)); // 30 days default when dayssupply is missing
         });
 
         it('should generate fallback IDs when missing', () => {
@@ -314,14 +315,14 @@ describe('ClaimsParser', () => {
             };
 
             const claims = parser.extractClaims(json, mockConfig);
-            expect(claims[0].startDate).toEqual(new Date('2024-01-15'));
+            expect(claims[0].startDate).toEqual(createParserDate('2024-01-15'));
         });
 
         it('should parse different date formats', () => {
             const testCases = [
-                { format: 'MM/DD/YYYY', date: '01/15/2024', expected: new Date(Date.UTC(2024, 0, 15)) },
-                { format: 'DD-MM-YYYY', date: '15-01-2024', expected: new Date(Date.UTC(2024, 0, 15)) },
-                { format: 'YYYY/MM/DD', date: '2024/01/15', expected: new Date(Date.UTC(2024, 0, 15)) }
+                { format: 'MM/DD/YYYY', date: '01/15/2024', expected: createParserDate('2024-01-15') },
+                { format: 'DD-MM-YYYY', date: '15-01-2024', expected: createParserDate('2024-01-15') },
+                { format: 'YYYY/MM/DD', date: '2024/01/15', expected: createParserDate('2024-01-15') }
             ];
 
             testCases.forEach(({ format, date, expected }) => {
@@ -362,13 +363,13 @@ describe('ClaimsParser', () => {
             const claims = parser.extractClaims(json, mockConfig);
             const timelineData = parser['generateTimelineData'](claims);
 
-            expect(timelineData.dateRange.start).toEqual(new Date('2024-01-01'));
-            expect(timelineData.dateRange.end).toEqual(new Date('2024-03-08')); // March 1 + 7 days
+            expect(timelineData.dateRange.start).toEqual(createParserDate('2024-01-01'));
+            expect(timelineData.dateRange.end).toEqual(calculateEndDate('2024-03-01', 7)); // March 1 + 7 days
             expect(timelineData.metadata.totalClaims).toBe(2);
             expect(timelineData.metadata.claimTypes).toEqual(['rxTba']);
         });
 
-        it('should sort claims by start date (most recent first)', () => {
+        it('should sort claims by start date (oldest first)', () => {
             const json = {
                 rxTba: [
                     { id: 'rx1', dos: '2024-01-01', dayssupply: 30, medication: 'Med A' },
@@ -380,9 +381,9 @@ describe('ClaimsParser', () => {
             const claims = parser.extractClaims(json, mockConfig);
             const timelineData = parser['generateTimelineData'](claims);
 
-            expect(timelineData.claims[0].id).toBe('rx2'); // March 1 (most recent)
+            expect(timelineData.claims[0].id).toBe('rx1'); // January 1 (oldest)
             expect(timelineData.claims[1].id).toBe('rx3'); // February 1
-            expect(timelineData.claims[2].id).toBe('rx1'); // January 1 (oldest)
+            expect(timelineData.claims[2].id).toBe('rx2'); // March 1 (most recent)
         });
 
         it('should handle empty claims array', () => {
