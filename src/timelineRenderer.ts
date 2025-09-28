@@ -274,12 +274,86 @@ export class TimelineRenderer {
         }
         .timeline-container {
             width: 100%;
-            height: calc(100vh - 100px);
+            height: calc(100vh - 60px);
             border: 1px solid var(--vscode-panel-border);
             border-radius: 4px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+        }
+        
+        .timeline-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .timeline-sidebar {
+            width: 220px;
+            min-width: 200px;
+            max-width: 280px;
+            background-color: var(--vscode-sideBar-background);
+            border-right: 1px solid var(--vscode-panel-border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .sidebar-resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            cursor: col-resize;
+            background-color: transparent;
+            transition: background-color 0.2s;
+        }
+        
+        .sidebar-resize-handle:hover {
+            background-color: var(--vscode-focusBorder);
+        }
+        
+        @media (max-width: 1200px) {
+            .timeline-sidebar {
+                width: 180px;
+                min-width: 160px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .timeline-sidebar {
+                width: 160px;
+                min-width: 140px;
+            }
+            
+            .legend-text {
+                font-size: 11px;
+            }
+            
+            .legend-count {
+                font-size: 9px;
+            }
+        }
+        
+        .sidebar-header {
+            padding: 12px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background-color: var(--vscode-panel-background);
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--vscode-editor-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .timeline-chart-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .timeline-header {
             padding: 10px 15px;
@@ -304,14 +378,35 @@ export class TimelineRenderer {
             background-color: var(--vscode-sideBar-background);
             border-bottom: 1px solid var(--vscode-panel-border);
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             flex-shrink: 0;
+            gap: 15px;
         }
         .control-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            background-color: var(--vscode-sideBar-background);
+            border-radius: 4px;
+            border: 1px solid var(--vscode-panel-border);
+        }
+        
+        .pan-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            background-color: var(--vscode-sideBar-background);
+            border-radius: 4px;
+            border: 1px solid var(--vscode-panel-border);
         }
         .control-button {
             background-color: var(--vscode-button-background);
@@ -343,56 +438,162 @@ export class TimelineRenderer {
             user-select: none;
         }
         .legend-container {
+            padding: 8px 0;
             display: flex;
-            gap: 15px;
-            align-items: center;
+            flex-direction: column;
+            gap: 4px;
         }
+        
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 3px;
-            transition: background-color 0.2s;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin: 0 8px;
+            border: 1px solid transparent;
         }
+        
         .legend-item:hover {
             background-color: var(--vscode-list-hoverBackground);
+            border-color: var(--vscode-list-hoverBackground);
         }
+        
         .legend-item.hidden {
-            opacity: 0.5;
+            opacity: 0.6;
+            background-color: var(--vscode-input-background);
         }
+        
         .legend-item.hidden .legend-text {
             text-decoration: line-through;
+            color: var(--vscode-descriptionForeground);
         }
+        
+        .legend-item.active {
+            background-color: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+            border-color: var(--vscode-focusBorder);
+        }
+        
         .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
             border: 1px solid var(--vscode-panel-border);
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
         }
+        
+        .legend-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
         .legend-text {
             font-size: 12px;
+            font-weight: 500;
             user-select: none;
+            line-height: 1.2;
         }
+        
         .legend-count {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--vscode-descriptionForeground);
-            margin-left: 4px;
+            font-weight: normal;
+        }
+        
+        .legend-toggle-all {
+            margin: 8px;
+            padding: 6px 12px;
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .legend-toggle-all:hover {
+            background-color: var(--vscode-button-hoverBackground);
         }
         .timeline-content {
             flex: 1;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .timeline-graph-section {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+        }
+        
+        .timeline-table-section {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            border-top: 2px solid var(--vscode-panel-border);
+        }
+        
+        .both-view .timeline-graph-section {
+            flex: 0 0 60%;
+            max-height: 60%;
+        }
+        
+        .both-view .timeline-table-section {
+            flex: 0 0 40%;
+            max-height: 40%;
+        }
+        
+        .view-splitter {
+            height: 4px;
+            background-color: var(--vscode-panel-border);
+            cursor: row-resize;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+        
+        .view-splitter:hover {
+            background-color: var(--vscode-focusBorder);
+        }
+        
+        .view-splitter::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 2px;
+            background-color: var(--vscode-descriptionForeground);
+            border-radius: 1px;
         }
         .timeline-svg {
             width: 100%;
             height: 100%;
             cursor: grab;
+            min-height: 400px;
         }
         
         .timeline-svg:active {
             cursor: grabbing;
+        }
+        
+        .timeline-svg.zooming {
+            cursor: zoom-in;
+        }
+        
+        .timeline-svg.panning {
+            cursor: move;
         }
         .loading {
             display: flex;
@@ -657,6 +858,37 @@ export class TimelineRenderer {
             0%, 100% { opacity: 0; }
             20%, 80% { opacity: 0.9; }
         }
+        
+        .context-menu {
+            position: absolute;
+            background: var(--vscode-menu-background);
+            border: 1px solid var(--vscode-menu-border);
+            border-radius: 4px;
+            padding: 4px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-size: 12px;
+            min-width: 150px;
+            user-select: none;
+        }
+        
+        .context-menu-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            color: var(--vscode-menu-foreground);
+            transition: background-color 0.1s;
+        }
+        
+        .context-menu-item:hover {
+            background: var(--vscode-menu-selectionBackground);
+            color: var(--vscode-menu-selectionForeground);
+        }
+        
+        .context-menu-separator {
+            height: 1px;
+            background: var(--vscode-menu-separatorBackground);
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -665,71 +897,103 @@ export class TimelineRenderer {
             <h2 class="timeline-title">Medical Claims Timeline</h2>
             <div id="stats" class="timeline-stats">Loading...</div>
         </div>
-        <div class="timeline-controls">
-            <div class="control-group">
-                <div class="view-toggle">
-                    <button id="timelineViewBtn" class="view-toggle-button active" title="Timeline View">📊 Timeline</button>
-                    <button id="tableViewBtn" class="view-toggle-button" title="Table View">📋 Table</button>
+        <div class="timeline-main">
+            <div class="timeline-sidebar">
+                <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
+                <div class="sidebar-header">
+                    📊 Claim Types
                 </div>
-                <button id="zoomIn" class="control-button" title="Zoom In (+)">🔍+</button>
-                <button id="zoomOut" class="control-button" title="Zoom Out (-)">🔍-</button>
-                <button id="resetZoom" class="control-button" title="Reset View (0)">⌂</button>
-                <button id="panLeft" class="control-button" title="Pan Left (Shift+←)">←</button>
-                <button id="panRight" class="control-button" title="Pan Right (Shift+→)">→</button>
-                <div class="zoom-info" id="zoomInfo" title="Current zoom level">100%</div>
-            </div>
-            <div id="legend" class="legend-container">
-                <!-- Legend items will be populated dynamically -->
-            </div>
-        </div>
-        <div class="timeline-content">
-            <div id="loading" class="loading">Loading timeline data...</div>
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <div class="empty-state-icon">📊</div>
-                <div>No claims visible</div>
-                <div style="font-size: 12px; margin-top: 8px;">Enable claim types in the legend above</div>
-            </div>
-            <div id="zoomHint" class="zoom-hint" style="display: none;">
-                <div style="font-size: 11px; color: var(--vscode-descriptionForeground); text-align: center; padding: 5px;">
-                    💡 <strong>Mouse:</strong> Scroll to zoom, drag to pan, double-click to fit | <strong>Keys:</strong> +/- to zoom, 0 to reset, Shift+arrows to pan
+                <div id="legend" class="legend-container">
+                    <!-- Legend items will be populated dynamically -->
                 </div>
+                <button id="toggleAllClaims" class="legend-toggle-all" title="Toggle all claim types">
+                    Toggle All
+                </button>
             </div>
-            <svg id="timeline" class="timeline-svg" style="display: none;"></svg>
-            
-            <!-- Table View -->
-            <div id="tableView" class="table-view">
-                <div class="table-controls">
-                    <input type="text" id="searchBox" class="search-box" placeholder="Search claims..." />
-                    <button id="exportCsv" class="export-button" title="Export as CSV">📄 CSV</button>
-                    <button id="exportJson" class="export-button" title="Export as JSON">📄 JSON</button>
-                    <span id="tableStats" style="margin-left: auto; color: var(--vscode-descriptionForeground);"></span>
+            <div class="timeline-chart-area">
+                <div class="timeline-controls">
+                    <div class="view-toggle">
+                        <button id="timelineViewBtn" class="view-toggle-button active" title="Timeline View">📊 Timeline</button>
+                        <button id="tableViewBtn" class="view-toggle-button" title="Table View">📋 Table</button>
+                        <button id="bothViewBtn" class="view-toggle-button" title="Both Views">📊📋 Both</button>
+                    </div>
+                    <div class="zoom-controls">
+                        <button id="zoomIn" class="control-button" title="Zoom In (+)">🔍+</button>
+                        <button id="zoomOut" class="control-button" title="Zoom Out (-)">🔍-</button>
+                        <button id="zoomToFit" class="control-button" title="Zoom to Fit (F)">⤢</button>
+                        <button id="resetZoom" class="control-button" title="Reset View (0)">⌂</button>
+                        <div class="zoom-info" id="zoomInfo" title="Current zoom level">100%</div>
+                    </div>
+                    <div class="pan-controls">
+                        <button id="panUp" class="control-button" title="Pan Up (Shift+↑)">↑</button>
+                        <button id="panDown" class="control-button" title="Pan Down (Shift+↓)">↓</button>
+                        <button id="panLeft" class="control-button" title="Pan Left (Shift+←)">←</button>
+                        <button id="panRight" class="control-button" title="Pan Right (Shift+→)">→</button>
+                    </div>
                 </div>
-                <div class="table-container">
-                    <table id="claimsTable" class="claims-table">
-                        <thead>
-                            <tr>
-                                <th data-column="id" class="sortable">ID</th>
-                                <th data-column="type" class="sortable">Type</th>
-                                <th data-column="displayName" class="sortable">Name</th>
-                                <th data-column="startDate" class="sortable">Start Date</th>
-                                <th data-column="endDate" class="sortable">End Date</th>
-                                <th data-column="duration" class="sortable">Duration</th>
-                                <th data-column="details" class="">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody id="claimsTableBody">
-                            <!-- Table rows will be populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="pagination" class="pagination" style="display: none;">
-                    <div id="paginationInfo"></div>
-                    <div class="pagination-controls">
-                        <button id="firstPage" class="pagination-button">⏮</button>
-                        <button id="prevPage" class="pagination-button">◀</button>
-                        <span id="pageInfo"></span>
-                        <button id="nextPage" class="pagination-button">▶</button>
-                        <button id="lastPage" class="pagination-button">⏭</button>
+                <div class="timeline-content">
+                    <!-- Loading and Empty States -->
+                    <div id="loading" class="loading">Loading timeline data...</div>
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">📊</div>
+                        <div>No claims visible</div>
+                        <div style="font-size: 12px; margin-top: 8px;">Enable claim types in the sidebar</div>
+                    </div>
+                    
+                    <!-- Timeline Graph Section -->
+                    <div id="timelineGraphSection" class="timeline-graph-section">
+                        <div id="zoomHint" class="zoom-hint" style="display: none;">
+                            <div style="font-size: 11px; color: var(--vscode-descriptionForeground); text-align: center; padding: 8px;">
+                                💡 <strong>Enhanced Navigation:</strong><br/>
+                                <strong>Mouse:</strong> Scroll to zoom, drag to pan, double-click to zoom in/fit, right-click for menu<br/>
+                                <strong>Keys:</strong> +/- zoom, F fit, 0 reset, Shift+arrows pan, Home/End to start/end<br/>
+                                <strong>Ctrl+Key:</strong> Faster zoom/pan | <strong>Sidebar:</strong> Toggle claim types to filter view
+                            </div>
+                        </div>
+                        <svg id="timeline" class="timeline-svg" style="display: none;"></svg>
+                    </div>
+                    
+                    <!-- View Splitter (only visible in both view) -->
+                    <div id="viewSplitter" class="view-splitter" style="display: none;"></div>
+                    
+                    <!-- Table Section -->
+                    <div id="timelineTableSection" class="timeline-table-section" style="display: none;">
+                        <div id="tableView" class="table-view active">
+                            <div class="table-controls">
+                                <input type="text" id="searchBox" class="search-box" placeholder="Search claims..." />
+                                <button id="exportCsv" class="export-button" title="Export as CSV">📄 CSV</button>
+                                <button id="exportJson" class="export-button" title="Export as JSON">📄 JSON</button>
+                                <span id="tableStats" style="margin-left: auto; color: var(--vscode-descriptionForeground);"></span>
+                            </div>
+                            <div class="table-container">
+                                <table id="claimsTable" class="claims-table">
+                                    <thead>
+                                        <tr>
+                                            <th data-column="id" class="sortable">ID</th>
+                                            <th data-column="type" class="sortable">Type</th>
+                                            <th data-column="displayName" class="sortable">Name</th>
+                                            <th data-column="startDate" class="sortable">Start Date</th>
+                                            <th data-column="endDate" class="sortable">End Date</th>
+                                            <th data-column="duration" class="sortable">Duration</th>
+                                            <th data-column="details" class="">Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="claimsTableBody">
+                                        <!-- Table rows will be populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="pagination" class="pagination" style="display: none;">
+                                <div id="paginationInfo"></div>
+                                <div class="pagination-controls">
+                                    <button id="firstPage" class="pagination-button">⏮</button>
+                                    <button id="prevPage" class="pagination-button">◀</button>
+                                    <span id="pageInfo"></span>
+                                    <button id="nextPage" class="pagination-button">▶</button>
+                                    <button id="lastPage" class="pagination-button">⏭</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -796,17 +1060,24 @@ export class TimelineRenderer {
 
                 // Initialize enhanced zoom behavior with mouse controls
                 zoom = d3.zoom()
-                    .scaleExtent([0.1, 10])
+                    .scaleExtent([0.05, 20])
                     .wheelDelta(function(event) {
                         // Custom wheel delta for smoother zooming
-                        return -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002);
+                        const delta = -event.deltaY;
+                        const scale = event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002;
+                        return delta * scale * (event.ctrlKey ? 2 : 1); // Faster zoom with Ctrl
+                    })
+                    .filter(function(event) {
+                        // Allow zoom with wheel, pan with drag, but prevent conflicts
+                        return !event.ctrlKey || event.type === 'wheel';
                     })
                     .on('zoom', handleZoom)
                     .on('start', handleZoomStart)
                     .on('end', handleZoomEnd);
 
                 svg.call(zoom)
-                    .on('dblclick.zoom', handleDoubleClick); // Custom double-click behavior
+                    .on('dblclick.zoom', handleDoubleClick) // Custom double-click behavior
+                    .on('contextmenu', handleRightClick); // Right-click context menu
 
                 console.log('WEBVIEW DIAGNOSTIC: SVG element found and zoom initialized');
 
@@ -829,41 +1100,85 @@ export class TimelineRenderer {
                 });
             }
         }
+        
+        function updateZoomBehavior() {
+            // Re-apply zoom behavior to ensure it works with the current container size
+            if (svg && zoom) {
+                svg.call(zoom)
+                    .on('dblclick.zoom', handleDoubleClick)
+                    .on('contextmenu', handleRightClick);
+                console.log('WEBVIEW DIAGNOSTIC: Zoom behavior updated for current view');
+            }
+        }
 
         function initializeControls() {
             // View toggle controls
             document.getElementById('timelineViewBtn').addEventListener('click', () => switchView('timeline'));
             document.getElementById('tableViewBtn').addEventListener('click', () => switchView('table'));
+            document.getElementById('bothViewBtn').addEventListener('click', () => switchView('both'));
             
-            // Zoom controls
+            // Enhanced zoom controls
             document.getElementById('zoomIn').addEventListener('click', () => {
-                svg.transition().duration(300).call(zoom.scaleBy, 1.5);
+                if (svg && zoom) {
+                    svg.transition().duration(200).call(zoom.scaleBy, 1.4);
+                }
             });
 
             document.getElementById('zoomOut').addEventListener('click', () => {
-                svg.transition().duration(300).call(zoom.scaleBy, 1 / 1.5);
+                if (svg && zoom) {
+                    svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.4);
+                }
+            });
+
+            document.getElementById('zoomToFit').addEventListener('click', () => {
+                zoomToFit();
             });
 
             document.getElementById('resetZoom').addEventListener('click', () => {
-                svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+                if (svg && zoom) {
+                    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+                }
             });
 
-            // Pan controls
+            // Enhanced pan controls with vertical panning
             document.getElementById('panLeft').addEventListener('click', () => {
-                const width = svg.node().clientWidth;
-                svg.transition().duration(300).call(zoom.translateBy, width * 0.2, 0);
+                if (svg && zoom) {
+                    const width = svg.node().clientWidth;
+                    svg.transition().duration(200).call(zoom.translateBy, width * 0.15, 0);
+                }
             });
 
             document.getElementById('panRight').addEventListener('click', () => {
-                const width = svg.node().clientWidth;
-                svg.transition().duration(300).call(zoom.translateBy, -width * 0.2, 0);
+                if (svg && zoom) {
+                    const width = svg.node().clientWidth;
+                    svg.transition().duration(200).call(zoom.translateBy, -width * 0.15, 0);
+                }
+            });
+
+            document.getElementById('panUp').addEventListener('click', () => {
+                if (svg && zoom) {
+                    const height = svg.node().clientHeight;
+                    svg.transition().duration(200).call(zoom.translateBy, 0, height * 0.15);
+                }
+            });
+
+            document.getElementById('panDown').addEventListener('click', () => {
+                if (svg && zoom) {
+                    const height = svg.node().clientHeight;
+                    svg.transition().duration(200).call(zoom.translateBy, 0, -height * 0.15);
+                }
             });
             
-            // Table controls
+            // Table controls with synchronized filtering
             document.getElementById('searchBox').addEventListener('input', (e) => {
                 tableState.searchQuery = e.target.value;
                 tableState.currentPage = 1;
                 renderTable();
+                
+                // Also update timeline if in both view
+                if (currentView === 'both') {
+                    updateTimelineWithSearch();
+                }
             });
             
             document.getElementById('exportCsv').addEventListener('click', () => exportData('csv'));
@@ -886,41 +1201,82 @@ export class TimelineRenderer {
                 goToPage(totalPages);
             });
             
+            // Toggle all claims button
+            document.getElementById('toggleAllClaims').addEventListener('click', () => {
+                toggleAllClaimTypes();
+            });
+            
+            // Sidebar resize functionality
+            initializeSidebarResize();
+            
+            // View splitter functionality
+            initializeViewSplitter();
+            
             // Keyboard shortcuts for zoom and pan
             document.addEventListener('keydown', handleKeyboardShortcuts);
         }
 
         function handleKeyboardShortcuts(event) {
             // Only handle shortcuts when timeline is visible and not typing in inputs
-            if (currentView !== 'timeline' || event.target.tagName === 'INPUT') return;
+            if ((currentView !== 'timeline' && currentView !== 'both') || event.target.tagName === 'INPUT') return;
+            
+            const panAmount = event.ctrlKey ? 0.2 : 0.1; // Faster pan with Ctrl
+            const zoomFactor = event.ctrlKey ? 1.5 : 1.2; // Faster zoom with Ctrl
             
             switch(event.key) {
                 case '+':
                 case '=':
                     event.preventDefault();
-                    svg.transition().duration(200).call(zoom.scaleBy, 1.2);
+                    svg.transition().duration(150).call(zoom.scaleBy, zoomFactor);
                     break;
                 case '-':
                     event.preventDefault();
-                    svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.2);
+                    svg.transition().duration(150).call(zoom.scaleBy, 1 / zoomFactor);
                     break;
                 case '0':
                     event.preventDefault();
                     svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
                     break;
+                case 'f':
+                case 'F':
+                    event.preventDefault();
+                    zoomToFit();
+                    break;
                 case 'ArrowLeft':
                     if (event.shiftKey) {
                         event.preventDefault();
                         const width = svg.node().clientWidth;
-                        svg.transition().duration(200).call(zoom.translateBy, width * 0.1, 0);
+                        svg.transition().duration(150).call(zoom.translateBy, width * panAmount, 0);
                     }
                     break;
                 case 'ArrowRight':
                     if (event.shiftKey) {
                         event.preventDefault();
                         const width = svg.node().clientWidth;
-                        svg.transition().duration(200).call(zoom.translateBy, -width * 0.1, 0);
+                        svg.transition().duration(150).call(zoom.translateBy, -width * panAmount, 0);
                     }
+                    break;
+                case 'ArrowUp':
+                    if (event.shiftKey) {
+                        event.preventDefault();
+                        const height = svg.node().clientHeight;
+                        svg.transition().duration(150).call(zoom.translateBy, 0, height * panAmount);
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (event.shiftKey) {
+                        event.preventDefault();
+                        const height = svg.node().clientHeight;
+                        svg.transition().duration(150).call(zoom.translateBy, 0, -height * panAmount);
+                    }
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    panToStart();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    panToEnd();
                     break;
             }
         }
@@ -928,22 +1284,51 @@ export class TimelineRenderer {
         function handleZoom(event) {
             currentTransform = event.transform;
             
-            if (xScale) {
+            if (xScale && yScale) {
                 const newXScale = currentTransform.rescaleX(xScale);
+                const newYScale = currentTransform.rescaleY(yScale);
                 
                 // Update timeline elements with smooth transitions
                 svg.selectAll('.claim-bar')
                     .attr('x', d => newXScale(new Date(d.startDate)))
-                    .attr('width', d => Math.max(1, newXScale(new Date(d.endDate)) - newXScale(new Date(d.startDate))));
+                    .attr('y', (d, i) => newYScale(i))
+                    .attr('width', d => Math.max(1, newXScale(new Date(d.endDate)) - newXScale(new Date(d.startDate))))
+                    .attr('height', newYScale.bandwidth());
                 
-                // Update x-axis with YYYY-MM-DD format
-                const tickCount = Math.max(3, Math.min(15, Math.floor(currentTransform.k * 8)));
+                // Update x-axis with adaptive formatting
+                const tickCount = Math.max(3, Math.min(20, Math.floor(currentTransform.k * 10)));
+                let tickFormat;
+                if (currentTransform.k > 5) {
+                    tickFormat = d3.timeFormat('%m/%d'); // Show month/day when zoomed in
+                } else if (currentTransform.k > 2) {
+                    tickFormat = d3.timeFormat('%Y-%m-%d'); // Show full date at medium zoom
+                } else {
+                    tickFormat = d3.timeFormat('%Y-%m'); // Show year-month when zoomed out
+                }
+                
                 const xAxis = d3.axisBottom(newXScale)
                     .ticks(tickCount)
-                    .tickFormat(d3.timeFormat('%Y-%m-%d'));
+                    .tickFormat(tickFormat);
                 
                 svg.select('.x-axis')
                     .call(xAxis);
+                
+                // Update y-axis
+                const yAxis = d3.axisLeft(newYScale)
+                    .tickFormat((d, i) => {
+                        const claim = timelineData.claims[i];
+                        if (!claim) return 'Claim ' + (i + 1);
+                        
+                        // Adjust label length based on zoom level
+                        const maxLength = Math.floor(Math.max(10, currentTransform.k * 15));
+                        const displayName = claim.displayName || (claim.type + ' ' + claim.id);
+                        return displayName.length > maxLength ? 
+                            displayName.substring(0, maxLength - 3) + '...' : 
+                            displayName;
+                    });
+                
+                svg.select('.y-axis')
+                    .call(yAxis);
                 
                 // Update zoom level indicator
                 updateZoomIndicator(currentTransform.k);
@@ -952,59 +1337,256 @@ export class TimelineRenderer {
 
         function handleZoomStart(event) {
             // Add visual feedback when zooming starts
-            svg.style('cursor', event.sourceEvent?.type === 'wheel' ? 'zoom-in' : 'grabbing');
+            const sourceType = event.sourceEvent?.type;
+            if (sourceType === 'wheel') {
+                svg.classed('zooming', true);
+            } else if (sourceType === 'mousedown') {
+                svg.classed('panning', true);
+            }
         }
 
         function handleZoomEnd(event) {
-            // Reset cursor when zooming ends
-            svg.style('cursor', 'grab');
+            // Reset cursor classes when zooming ends
+            svg.classed('zooming', false).classed('panning', false);
             
             // Snap to reasonable zoom levels if close
             const k = event.transform.k;
-            if (Math.abs(k - 1) < 0.1) {
+            if (Math.abs(k - 1) < 0.05) {
                 svg.transition().duration(200).call(zoom.scaleTo, 1);
             }
+            
+            // Constrain panning to keep content visible
+            constrainPanning();
         }
 
         function handleDoubleClick(event) {
             // Double-click to zoom to fit or reset
             event.preventDefault();
             
-            if (currentTransform.k === 1) {
-                // If at default zoom, zoom in to 2x
-                svg.transition().duration(300).call(zoom.scaleTo, 2);
+            const clickPoint = d3.pointer(event);
+            
+            if (currentTransform.k < 1.5) {
+                // Zoom in to the clicked point
+                svg.transition().duration(400).call(
+                    zoom.transform,
+                    d3.zoomIdentity.translate(-clickPoint[0] * 2 + svg.node().clientWidth / 2, -clickPoint[1] * 2 + svg.node().clientHeight / 2).scale(3)
+                );
             } else {
-                // If zoomed, reset to fit
-                svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+                // Reset to fit
+                zoomToFit();
             }
+        }
+
+        function handleRightClick(event) {
+            event.preventDefault();
+            // Show context menu with zoom options
+            showContextMenu(event);
+        }
+
+        function zoomToFit() {
+            if (!timelineData || !timelineData.claims.length) return;
+            
+            const container = svg.node();
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // Calculate bounds of all visible claims
+            const visibleClaims = timelineData.claims.filter(claim => visibleClaimTypes.has(claim.type));
+            if (visibleClaims.length === 0) return;
+            
+            const margin = { top: 40, right: 40, bottom: 80, left: 200 };
+            const availableWidth = containerWidth - margin.left - margin.right;
+            const availableHeight = containerHeight - margin.top - margin.bottom;
+            
+            // Calculate the scale needed to fit all data
+            const dateExtent = d3.extent(visibleClaims.flatMap(d => [new Date(d.startDate), new Date(d.endDate)]));
+            const timeSpan = dateExtent[1].getTime() - dateExtent[0].getTime();
+            const claimCount = visibleClaims.length;
+            
+            const scaleX = availableWidth / (xScale(dateExtent[1]) - xScale(dateExtent[0]));
+            const scaleY = availableHeight / (yScale.range()[1] - yScale.range()[0]);
+            const scale = Math.min(scaleX, scaleY, 5); // Cap at 5x zoom
+            
+            // Center the view on the data
+            const centerX = (xScale(dateExtent[0]) + xScale(dateExtent[1])) / 2;
+            const centerY = yScale.range()[1] / 2;
+            
+            const transform = d3.zoomIdentity
+                .translate(containerWidth / 2 - centerX * scale, containerHeight / 2 - centerY * scale)
+                .scale(scale);
+            
+            svg.transition().duration(750).call(zoom.transform, transform);
+        }
+
+        function constrainPanning() {
+            if (!timelineData || !xScale || !yScale) return;
+            
+            const container = svg.node();
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // Get current transform
+            const t = currentTransform;
+            
+            // Calculate content bounds
+            const contentWidth = xScale.range()[1] - xScale.range()[0];
+            const contentHeight = yScale.range()[1] - yScale.range()[0];
+            
+            // Calculate maximum allowed translation
+            const maxTranslateX = Math.max(0, (contentWidth * t.k - containerWidth) / 2);
+            const maxTranslateY = Math.max(0, (contentHeight * t.k - containerHeight) / 2);
+            
+            // Constrain translation
+            let newX = Math.max(-maxTranslateX, Math.min(maxTranslateX, t.x));
+            let newY = Math.max(-maxTranslateY, Math.min(maxTranslateY, t.y));
+            
+            // Apply constrained transform if needed
+            if (newX !== t.x || newY !== t.y) {
+                const constrainedTransform = d3.zoomIdentity.translate(newX, newY).scale(t.k);
+                svg.transition().duration(300).call(zoom.transform, constrainedTransform);
+            }
+        }
+
+        function panToStart() {
+            if (!xScale || !timelineData) return;
+            
+            const startDate = timelineData.dateRange.start;
+            const targetX = xScale(startDate);
+            const containerWidth = svg.node().clientWidth;
+            
+            const transform = d3.zoomIdentity
+                .translate(-targetX * currentTransform.k + containerWidth * 0.1, currentTransform.y)
+                .scale(currentTransform.k);
+            
+            svg.transition().duration(500).call(zoom.transform, transform);
+        }
+
+        function panToEnd() {
+            if (!xScale || !timelineData) return;
+            
+            const endDate = timelineData.dateRange.end;
+            const targetX = xScale(endDate);
+            const containerWidth = svg.node().clientWidth;
+            
+            const transform = d3.zoomIdentity
+                .translate(-targetX * currentTransform.k + containerWidth * 0.9, currentTransform.y)
+                .scale(currentTransform.k);
+            
+            svg.transition().duration(500).call(zoom.transform, transform);
+        }
+
+        function showContextMenu(event) {
+            // Remove existing context menu
+            d3.selectAll('.context-menu').remove();
+            
+            const menu = d3.select('body')
+                .append('div')
+                .attr('class', 'context-menu')
+                .style('position', 'absolute')
+                .style('left', event.pageX + 'px')
+                .style('top', event.pageY + 'px')
+                .style('background', 'var(--vscode-menu-background)')
+                .style('border', '1px solid var(--vscode-menu-border)')
+                .style('border-radius', '4px')
+                .style('padding', '4px 0')
+                .style('box-shadow', '0 2px 8px rgba(0,0,0,0.3)')
+                .style('z-index', '1000')
+                .style('font-size', '12px')
+                .style('min-width', '150px');
+            
+            const menuItems = [
+                { text: 'Zoom In', action: () => svg.transition().duration(200).call(zoom.scaleBy, 1.4) },
+                { text: 'Zoom Out', action: () => svg.transition().duration(200).call(zoom.scaleBy, 1/1.4) },
+                { text: 'Zoom to Fit', action: zoomToFit },
+                { text: 'Reset View', action: () => svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity) },
+                { text: '---', action: null },
+                { text: 'Pan to Start', action: panToStart },
+                { text: 'Pan to End', action: panToEnd }
+            ];
+            
+            menuItems.forEach(item => {
+                if (item.text === '---') {
+                    menu.append('div')
+                        .style('height', '1px')
+                        .style('background', 'var(--vscode-menu-separatorBackground)')
+                        .style('margin', '4px 0');
+                } else {
+                    menu.append('div')
+                        .text(item.text)
+                        .style('padding', '6px 12px')
+                        .style('cursor', 'pointer')
+                        .style('color', 'var(--vscode-menu-foreground)')
+                        .on('mouseover', function() {
+                            d3.select(this).style('background', 'var(--vscode-menu-selectionBackground)');
+                        })
+                        .on('mouseout', function() {
+                            d3.select(this).style('background', 'transparent');
+                        })
+                        .on('click', () => {
+                            if (item.action) item.action();
+                            menu.remove();
+                        });
+                }
+            });
+            
+            // Remove menu when clicking elsewhere
+            d3.select('body').on('click.context-menu', () => {
+                menu.remove();
+                d3.select('body').on('click.context-menu', null);
+            });
         }
 
         function updateZoomIndicator(zoomLevel) {
             // Update zoom level display in controls
             let zoomText = '';
-            if (zoomLevel < 0.5) {
+            let zoomColor = 'var(--vscode-descriptionForeground)';
+            
+            if (zoomLevel < 0.2) {
+                zoomText = 'Far Out';
+                zoomColor = 'var(--vscode-charts-blue)';
+            } else if (zoomLevel < 0.5) {
                 zoomText = 'Zoomed Out';
+                zoomColor = 'var(--vscode-charts-blue)';
+            } else if (zoomLevel > 5) {
+                zoomText = 'Very Close';
+                zoomColor = 'var(--vscode-charts-red)';
             } else if (zoomLevel > 2) {
                 zoomText = 'Zoomed In';
+                zoomColor = 'var(--vscode-charts-orange)';
             } else {
                 zoomText = 'Normal';
+                zoomColor = 'var(--vscode-charts-green)';
             }
             
             // Update zoom percentage display
             const zoomInfo = document.getElementById('zoomInfo');
             if (zoomInfo) {
-                zoomInfo.textContent = \`\${Math.round(zoomLevel * 100)}%\`;
-                zoomInfo.title = \`Current zoom level: \${Math.round(zoomLevel * 100)}% (\${zoomText})\`;
+                const percentage = Math.round(zoomLevel * 100);
+                zoomInfo.textContent = \`\${percentage}%\`;
+                zoomInfo.style.color = zoomColor;
+                zoomInfo.title = \`Current zoom: \${percentage}% (\${zoomText})\\nRange: 5% - 2000%\\nDouble-click timeline to zoom in/fit\\nRight-click for zoom menu\`;
             }
             
-            // Update button titles with current zoom level
+            // Update button titles with current zoom level and shortcuts
             const zoomInBtn = document.getElementById('zoomIn');
             const zoomOutBtn = document.getElementById('zoomOut');
+            const zoomToFitBtn = document.getElementById('zoomToFit');
             const resetBtn = document.getElementById('resetZoom');
             
-            if (zoomInBtn) zoomInBtn.title = \`Zoom In (+) - Current: \${Math.round(zoomLevel * 100)}%\`;
-            if (zoomOutBtn) zoomOutBtn.title = \`Zoom Out (-) - Current: \${Math.round(zoomLevel * 100)}%\`;
-            if (resetBtn) resetBtn.title = \`Reset View (0) - \${zoomText}\`;
+            if (zoomInBtn) {
+                zoomInBtn.title = \`Zoom In (+) - Current: \${Math.round(zoomLevel * 100)}%\\nShortcut: + or = key\`;
+                zoomInBtn.disabled = zoomLevel >= 20;
+            }
+            if (zoomOutBtn) {
+                zoomOutBtn.title = \`Zoom Out (-) - Current: \${Math.round(zoomLevel * 100)}%\\nShortcut: - key\`;
+                zoomOutBtn.disabled = zoomLevel <= 0.05;
+            }
+            if (zoomToFitBtn) {
+                zoomToFitBtn.title = \`Zoom to Fit (F) - Shows all visible claims\\nShortcut: F key\`;
+            }
+            if (resetBtn) {
+                resetBtn.title = \`Reset View (0) - \${zoomText}\\nShortcut: 0 key\`;
+            }
         }
 
         function updateTimelineData(data) {
@@ -1177,20 +1759,209 @@ export class TimelineRenderer {
                 
                 if (!config.visible) {
                     legendItem.classList.add('hidden');
+                } else {
+                    legendItem.classList.add('active');
                 }
 
                 legendItem.innerHTML = \`
                     <div class="legend-color" style="background-color: \${config.color}"></div>
-                    <span class="legend-text">\${config.displayName}</span>
-                    <span class="legend-count">(\${config.count})</span>
+                    <div class="legend-content">
+                        <div class="legend-text">\${config.displayName}</div>
+                        <div class="legend-count">\${config.count} claim\${config.count !== 1 ? 's' : ''}</div>
+                    </div>
                 \`;
 
                 legendItem.addEventListener('click', () => toggleClaimType(type));
                 
-                legendItem.title = \`Click to \${config.visible ? 'hide' : 'show'} \${config.displayName}\`;
+                legendItem.title = \`Click to \${config.visible ? 'hide' : 'show'} \${config.displayName}\\n\${config.count} claim\${config.count !== 1 ? 's' : ''} of this type\`;
 
                 legendContainer.appendChild(legendItem);
             });
+            
+            // Update toggle all button text
+            updateToggleAllButton();
+        }
+        
+        function toggleAllClaimTypes() {
+            const allVisible = visibleClaimTypes.size === claimTypeConfigs.size;
+            
+            if (allVisible) {
+                // Hide all
+                visibleClaimTypes.clear();
+                claimTypeConfigs.forEach((config) => {
+                    config.visible = false;
+                });
+            } else {
+                // Show all
+                claimTypeConfigs.forEach((config, type) => {
+                    config.visible = true;
+                    visibleClaimTypes.add(type);
+                });
+            }
+            
+            // Update legend visual state
+            renderLegend();
+            updateTimelineVisibility();
+            updateStats();
+        }
+        
+        function updateToggleAllButton() {
+            const toggleButton = document.getElementById('toggleAllClaims');
+            const allVisible = visibleClaimTypes.size === claimTypeConfigs.size;
+            const noneVisible = visibleClaimTypes.size === 0;
+            
+            if (noneVisible) {
+                toggleButton.textContent = 'Show All';
+                toggleButton.title = 'Show all claim types';
+            } else if (allVisible) {
+                toggleButton.textContent = 'Hide All';
+                toggleButton.title = 'Hide all claim types';
+            } else {
+                toggleButton.textContent = 'Show All';
+                toggleButton.title = \`Show all claim types (\${visibleClaimTypes.size}/\${claimTypeConfigs.size} visible)\`;
+            }
+        }
+        
+        function initializeSidebarResize() {
+            const sidebar = document.querySelector('.timeline-sidebar');
+            const resizeHandle = document.getElementById('sidebarResizeHandle');
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+            
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = parseInt(document.defaultView.getComputedStyle(sidebar).width, 10);
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                
+                const width = startWidth + e.clientX - startX;
+                const minWidth = 140;
+                const maxWidth = 350;
+                const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, width));
+                
+                sidebar.style.width = constrainedWidth + 'px';
+                
+                // Trigger timeline re-render if needed
+                if ((currentView === 'timeline' || currentView === 'both') && svg && timelineData) {
+                    // Debounce the re-render
+                    clearTimeout(window.resizeTimeout);
+                    window.resizeTimeout = setTimeout(() => {
+                        renderTimeline();
+                    }, 100);
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+        
+        function initializeViewSplitter() {
+            const splitter = document.getElementById('viewSplitter');
+            const timelineGraphSection = document.getElementById('timelineGraphSection');
+            const timelineTableSection = document.getElementById('timelineTableSection');
+            let isResizing = false;
+            let startY = 0;
+            let startGraphHeight = 0;
+            let startTableHeight = 0;
+            
+            splitter.addEventListener('mousedown', (e) => {
+                if (currentView !== 'both') return;
+                
+                isResizing = true;
+                startY = e.clientY;
+                startGraphHeight = timelineGraphSection.offsetHeight;
+                startTableHeight = timelineTableSection.offsetHeight;
+                document.body.style.cursor = 'row-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing || currentView !== 'both') return;
+                
+                const deltaY = e.clientY - startY;
+                const totalHeight = startGraphHeight + startTableHeight;
+                const newGraphHeight = startGraphHeight + deltaY;
+                const newTableHeight = startTableHeight - deltaY;
+                
+                // Constrain heights
+                const minHeight = 150;
+                const maxGraphHeight = totalHeight - minHeight;
+                const maxTableHeight = totalHeight - minHeight;
+                
+                if (newGraphHeight >= minHeight && newGraphHeight <= maxGraphHeight &&
+                    newTableHeight >= minHeight && newTableHeight <= maxTableHeight) {
+                    
+                    const graphPercent = (newGraphHeight / totalHeight) * 100;
+                    const tablePercent = (newTableHeight / totalHeight) * 100;
+                    
+                    timelineGraphSection.style.flex = \`0 0 \${graphPercent}%\`;
+                    timelineTableSection.style.flex = \`0 0 \${tablePercent}%\`;
+                    
+                    // Trigger timeline re-render
+                    if (svg && timelineData) {
+                        clearTimeout(window.splitterTimeout);
+                        window.splitterTimeout = setTimeout(() => {
+                            renderTimeline();
+                        }, 50);
+                    }
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+        
+        function updateTimelineWithSearch() {
+            if (!svg || !timelineData || currentView !== 'both') return;
+            
+            // Get the same filtered claims as the table
+            const searchQuery = tableState.searchQuery.toLowerCase();
+            
+            svg.selectAll('.claim-bar')
+                .transition()
+                .duration(300)
+                .style('opacity', d => {
+                    // Check visibility first
+                    if (!visibleClaimTypes.has(d.type)) return 0;
+                    
+                    // Check search query
+                    if (searchQuery) {
+                        const searchableText = [
+                            d.id,
+                            d.type,
+                            d.displayName,
+                            d.startDate.toLocaleDateString(),
+                            d.endDate.toLocaleDateString(),
+                            JSON.stringify(d.details)
+                        ].join(' ').toLowerCase();
+                        
+                        if (!searchableText.includes(searchQuery)) return 0.2; // Dimmed but visible
+                    }
+                    
+                    return 1;
+                })
+                .style('pointer-events', d => {
+                    if (!visibleClaimTypes.has(d.type)) return 'none';
+                    return 'all';
+                });
         }
 
         function toggleClaimType(type) {
@@ -1209,8 +1980,12 @@ export class TimelineRenderer {
             const legendItem = document.querySelector(\`[data-type="\${type}"]\`);
             if (legendItem) {
                 legendItem.classList.toggle('hidden', !config.visible);
-                legendItem.title = \`Click to \${config.visible ? 'hide' : 'show'} \${config.displayName}\`;
+                legendItem.classList.toggle('active', config.visible);
+                legendItem.title = \`Click to \${config.visible ? 'hide' : 'show'} \${config.displayName}\\n\${config.count} claim\${config.count !== 1 ? 's' : ''} of this type\`;
             }
+
+            // Update toggle all button
+            updateToggleAllButton();
 
             // Update timeline
             updateTimelineVisibility();
@@ -1220,24 +1995,31 @@ export class TimelineRenderer {
         function updateTimelineVisibility() {
             if (visibleClaimTypes.size === 0) {
                 // Show empty state
-                if (currentView === 'timeline') {
+                if (currentView === 'timeline' || currentView === 'both') {
                     document.getElementById('timeline').style.display = 'none';
                     document.getElementById('emptyState').style.display = 'flex';
+                }
+                if (currentView === 'table' || currentView === 'both') {
+                    renderTable();
                 }
                 return;
             }
 
-            if (currentView === 'timeline') {
+            if (currentView === 'timeline' || currentView === 'both') {
                 document.getElementById('timeline').style.display = 'block';
                 document.getElementById('emptyState').style.display = 'none';
 
                 // Update claim bar visibility with animation
-                svg.selectAll('.claim-bar')
-                    .transition()
-                    .duration(300)
-                    .style('opacity', d => visibleClaimTypes.has(d.type) ? 1 : 0)
-                    .style('pointer-events', d => visibleClaimTypes.has(d.type) ? 'all' : 'none');
-            } else if (currentView === 'table') {
+                if (svg) {
+                    svg.selectAll('.claim-bar')
+                        .transition()
+                        .duration(300)
+                        .style('opacity', d => visibleClaimTypes.has(d.type) ? 1 : 0)
+                        .style('pointer-events', d => visibleClaimTypes.has(d.type) ? 'all' : 'none');
+                }
+            }
+            
+            if (currentView === 'table' || currentView === 'both') {
                 // Update table view
                 renderTable();
             }
@@ -1253,20 +2035,23 @@ export class TimelineRenderer {
 
                 svg.selectAll('*').remove();
 
-                const container = document.querySelector('.timeline-content');
+                // Get the correct container based on current view
+                const container = currentView === 'both' 
+                    ? document.getElementById('timelineGraphSection')
+                    : document.querySelector('.timeline-content');
                 const containerRect = container.getBoundingClientRect();
-                const width = Math.max(400, containerRect.width);
-                const height = Math.max(300, containerRect.height);
+                const width = Math.max(800, containerRect.width); // Much larger minimum width since we have more space
+                const height = Math.max(currentView === 'both' ? 300 : 600, containerRect.height); // Adjust height for both view
                 
                 const margin = { 
-                    top: 20, 
-                    right: 20, 
-                    bottom: 50,
-                    left: Math.max(80, Math.min(200, width * 0.2))
+                    top: 40, 
+                    right: 40, 
+                    bottom: 100, // More space for rotated labels
+                    left: Math.max(150, Math.min(300, width * 0.3)) // Even more space for claim names
                 };
                 
-                const innerWidth = Math.max(200, width - margin.left - margin.right);
-                const innerHeight = Math.max(150, height - margin.top - margin.bottom);
+                const innerWidth = Math.max(600, width - margin.left - margin.right); // Much larger minimum
+                const innerHeight = Math.max(400, height - margin.top - margin.bottom); // Much larger minimum
 
                 const dateExtent = [timelineData.dateRange.start, timelineData.dateRange.end];
 
@@ -1294,7 +2079,7 @@ export class TimelineRenderer {
                         const claim = timelineData.claims[i];
                         if (!claim) return 'Claim ' + (i + 1);
                         
-                        const maxLength = Math.floor(margin.left / 8);
+                        const maxLength = Math.floor(margin.left / 6); // More characters allowed
                         const displayName = claim.displayName || (claim.type + ' ' + claim.id);
                         return displayName.length > maxLength ? 
                             displayName.substring(0, maxLength - 3) + '...' : 
@@ -1344,10 +2129,29 @@ export class TimelineRenderer {
         function handleClaimClick(event, d) {
             console.log('WEBVIEW DIAGNOSTIC: Claim clicked:', d);
             
+            // Highlight in table if both view is active
+            if (currentView === 'both') {
+                highlightClaimInTable(d.id);
+            }
+            
             vscode.postMessage({
                 command: 'select',
                 payload: d.id
             });
+        }
+        
+        function highlightClaimInTable(claimId) {
+            // Remove previous selections
+            document.querySelectorAll('.claims-table tr.selected').forEach(row => {
+                row.classList.remove('selected');
+            });
+            
+            // Highlight the selected claim
+            const row = document.querySelector(\`[data-claim-id="\${claimId}"]\`);
+            if (row) {
+                row.classList.add('selected');
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         function handleClaimMouseOver(event, d) {
@@ -1447,24 +2251,81 @@ export class TimelineRenderer {
             showError(message);
         }
 
-        // Table View Functions
+        // View Functions
         function switchView(view) {
             currentView = view;
             
             // Update button states
             document.getElementById('timelineViewBtn').classList.toggle('active', view === 'timeline');
             document.getElementById('tableViewBtn').classList.toggle('active', view === 'table');
+            document.getElementById('bothViewBtn').classList.toggle('active', view === 'both');
             
-            // Show/hide views
+            const timelineContent = document.querySelector('.timeline-content');
+            const timelineGraphSection = document.getElementById('timelineGraphSection');
+            const timelineTableSection = document.getElementById('timelineTableSection');
+            const viewSplitter = document.getElementById('viewSplitter');
+            const timeline = document.getElementById('timeline');
+            const emptyState = document.getElementById('emptyState');
+            const zoomHint = document.getElementById('zoomHint');
+            
+            // Reset classes
+            timelineContent.classList.remove('both-view');
+            
             if (view === 'timeline') {
-                document.getElementById('timeline').style.display = 'block';
-                document.getElementById('tableView').classList.remove('active');
-                document.getElementById('emptyState').style.display = visibleClaimTypes.size === 0 ? 'flex' : 'none';
-            } else {
-                document.getElementById('timeline').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'none';
-                document.getElementById('tableView').classList.add('active');
+                // Timeline only view
+                timelineGraphSection.style.display = 'block';
+                timelineTableSection.style.display = 'none';
+                viewSplitter.style.display = 'none';
+                timeline.style.display = 'block';
+                emptyState.style.display = visibleClaimTypes.size === 0 ? 'flex' : 'none';
+                zoomHint.style.display = 'none';
+                
+                // Re-apply zoom behavior for timeline view
+                setTimeout(() => {
+                    updateZoomBehavior();
+                }, 50);
+                
+                // Show zoom hint after a delay
+                setTimeout(() => {
+                    if (zoomHint && currentView === 'timeline') {
+                        zoomHint.style.display = 'block';
+                        setTimeout(() => {
+                            zoomHint.style.display = 'none';
+                        }, 4000);
+                    }
+                }, 1000);
+                
+            } else if (view === 'table') {
+                // Table only view
+                timelineGraphSection.style.display = 'none';
+                timelineTableSection.style.display = 'block';
+                viewSplitter.style.display = 'none';
+                timeline.style.display = 'none';
+                emptyState.style.display = 'none';
+                zoomHint.style.display = 'none';
                 renderTable();
+                
+            } else if (view === 'both') {
+                // Both views
+                timelineContent.classList.add('both-view');
+                timelineGraphSection.style.display = 'block';
+                timelineTableSection.style.display = 'block';
+                viewSplitter.style.display = 'block';
+                timeline.style.display = 'block';
+                emptyState.style.display = visibleClaimTypes.size === 0 ? 'flex' : 'none';
+                zoomHint.style.display = 'none';
+                
+                // Render both views
+                renderTable();
+                
+                // Re-render timeline to adjust for new size
+                setTimeout(() => {
+                    if (timelineData && svg) {
+                        renderTimeline();
+                        // Re-apply zoom behavior after timeline is rendered
+                        updateZoomBehavior();
+                    }
+                }, 100);
             }
         }
 
@@ -1579,11 +2440,31 @@ export class TimelineRenderer {
                 row.classList.add('selected');
             }
             
+            // Highlight in timeline if both view is active
+            if (currentView === 'both') {
+                highlightClaimInTimeline(claimId);
+            }
+            
             // Send selection message to extension
             vscode.postMessage({
                 command: 'select',
                 payload: claimId
             });
+        }
+        
+        function highlightClaimInTimeline(claimId) {
+            if (!svg) return;
+            
+            // Reset all claim bars
+            svg.selectAll('.claim-bar')
+                .style('stroke-width', 1)
+                .style('stroke', 'var(--vscode-panel-border)');
+            
+            // Highlight the selected claim
+            svg.selectAll('.claim-bar')
+                .filter(d => d.id === claimId)
+                .style('stroke-width', 3)
+                .style('stroke', 'var(--vscode-focusBorder)');
         }
 
         function handleSort(column) {

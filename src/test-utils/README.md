@@ -1,14 +1,82 @@
-# Test Utilities Documentation
+# Test Utilities
 
-This directory contains standardized mock configuration utilities for consistent testing across all test suites in the Medical Claims Timeline extension.
+This directory contains standardized test utilities for the Medical Claims Timeline extension. These utilities were developed to address the common pitfalls that led to 37 failing tests and ensure consistent, reliable testing across all test suites.
 
 ## Overview
 
-The test utilities provide:
-- **Date handling utilities** that match parser behavior
-- **Mock configuration utilities** for VSCode API, file system, and parsers
-- **Test data generation utilities** for consistent test scenarios
-- **Helper functions** for common test operations
+The test utilities are organized into three main categories:
+
+1. **Date Handling** (`dateUtils.ts`) - Utilities that match the parser's date normalization behavior
+2. **Mock Configuration** (`mockUtils.ts`) - Complete mock setups for external dependencies
+3. **Test Data Generation** (`testDataUtils.ts`) - Standardized test data that matches parser expectations
+
+## Quick Start
+
+```typescript
+import { 
+    createParserDate, 
+    expectDateToEqual,
+    createTestEnvironment, 
+    generateTestData,
+    generateExpectedTimelineData
+} from './test-utils';
+
+// Basic test setup
+const testEnv = createTestEnvironment();
+const inputData = generateTestData({ rxTbaCount: 2 });
+const expectedOutput = generateExpectedTimelineData(inputData);
+```
+
+## Date Handling Utilities (`dateUtils.ts`)
+
+### Core Problem Solved
+The parser normalizes dates to local midnight, but tests often expected UTC dates, causing failures across different timezones.
+
+### Key Functions
+
+#### `createParserDate(dateString: string): Date`
+Creates dates that match parser behavior - normalized to local midnight.
+
+```typescript
+// ✅ Correct - matches parser behavior
+const expectedDate = createParserDate('2024-01-15');
+expect(claim.startDate).toEqual(expectedDate);
+
+// ❌ Wrong - UTC date fails in non-UTC timezones
+const wrongDate = new Date('2024-01-15T00:00:00.000Z');
+```
+
+#### `expectDateToEqual(actual: Date, expected: string): void`
+Timezone-safe date comparison utility.
+
+```typescript
+// Safe comparison across all timezones
+expectDateToEqual(claim.startDate, '2024-01-15');
+```
+
+#### `calculateEndDate(startDateString: string, daysSupply: number): Date`
+Calculates end dates using the same logic as the parser.
+
+```typescript
+const endDate = calculateEndDate('2024-01-15', 30);
+expect(claim.endDate).toEqual(endDate);
+```
+
+#### `sortClaimsByDate(claims: any[]): any[]`
+Sorts claims by start date descending (most recent first) - matches parser behavior.
+
+```typescript
+const expectedOrder = sortClaimsByDate(inputClaims);
+expect(result.claims).toEqual(expectedOrder);
+```
+
+### Additional Utilities
+
+- `createDateRange()` - Create date ranges for testing
+- `parseDaysSupply()` - Parse days supply with fallback logic
+- `validateTimelineDates()` - Validate timeline date integrity
+- `generateTestClaimData()` - Generate test claims with consistent dates
+- `createComprehensiveTestData()` - Create complete test datasets
 
 ## Mock Configuration Utilities
 

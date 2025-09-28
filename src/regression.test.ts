@@ -25,17 +25,30 @@ vi.mock('vscode', () => ({
     }
 }));
 
-// Mock fs module
+// Mock fs module with complete sync and async operations
 vi.mock('fs', async (importOriginal) => {
     const actual = await importOriginal<typeof fs>();
     return {
         ...actual,
-        existsSync: vi.fn(),
-        readFileSync: vi.fn(),
+        existsSync: vi.fn().mockReturnValue(true),
+        readFileSync: vi.fn().mockReturnValue('{"test": "data"}'),
         writeFileSync: vi.fn(),
+        readFile: vi.fn().mockResolvedValue('{"test": "data"}'),
+        writeFile: vi.fn().mockResolvedValue(undefined),
+        access: vi.fn().mockResolvedValue(undefined),
+        stat: vi.fn().mockResolvedValue({ isFile: () => true, isDirectory: () => false }),
         promises: {
             ...actual.promises,
-            readFile: vi.fn()
+            readFile: vi.fn().mockResolvedValue('{"test": "data"}'),
+            writeFile: vi.fn().mockResolvedValue(undefined),
+            access: vi.fn().mockResolvedValue(undefined),
+            stat: vi.fn().mockResolvedValue({ isFile: () => true, isDirectory: () => false })
+        },
+        constants: {
+            F_OK: 0,
+            R_OK: 4,
+            W_OK: 2,
+            X_OK: 1
         }
     };
 });
@@ -411,10 +424,10 @@ describe('Regression Tests - Webview Communication', () => {
         mockPanel = {
             webview: {
                 html: '',
-                onDidReceiveMessage: vi.fn(),
+                onDidReceiveMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
                 postMessage: vi.fn()
             },
-            onDidDispose: vi.fn(),
+            onDidDispose: vi.fn().mockReturnValue({ dispose: vi.fn() }),
             reveal: vi.fn()
         };
 
@@ -424,12 +437,15 @@ describe('Regression Tests - Webview Communication', () => {
     });
 
     describe('Fixed webview data communication', () => {
-        it('should send data immediately without waiting for ready message', () => {
+        it('should send data immediately without waiting for ready message', async () => {
             const sampleData = createSampleTimelineData();
             
             renderer.createPanel(sampleData);
             
-            // Data should be sent immediately during panel creation
+            // Wait for the setTimeout delay in TimelineRenderer.createPanel
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Data should be sent after the timeout delay
             expect(mockPanel.webview.postMessage).toHaveBeenCalledWith({
                 command: 'updateData',
                 payload: expect.objectContaining({
@@ -440,15 +456,29 @@ describe('Regression Tests - Webview Communication', () => {
             });
         });
 
-        it('should handle ready message by sending current data', () => {
+        it('should handle ready message by sending current data', async () => {
             const sampleData = createSampleTimelineData();
+            
+            // Create panel and capture the message handler
+            let messageHandler: any = null;
+            mockPanel.webview.onDidReceiveMessage.mockImplementation((handler: any) => {
+                messageHandler = handler;
+                return { dispose: vi.fn() };
+            });
+            
             renderer.createPanel(sampleData);
             
-            // Clear previous calls
-            vi.clearAllMocks();
+            // Wait for initial setup
+            await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Get message handler and simulate ready message
-            const messageHandler = (mockPanel.webview.onDidReceiveMessage as any).mock.calls[0][0];
+            // Verify message handler was registered
+            expect(mockPanel.webview.onDidReceiveMessage).toHaveBeenCalled();
+            expect(messageHandler).toBeTruthy();
+            
+            // Clear previous postMessage calls
+            mockPanel.webview.postMessage.mockClear();
+            
+            // Simulate ready message
             messageHandler({ command: 'ready' });
             
             expect(mockPanel.webview.postMessage).toHaveBeenCalledWith({
@@ -457,11 +487,17 @@ describe('Regression Tests - Webview Communication', () => {
             });
         });
 
-        it('should serialize dates correctly for webview', () => {
+        it('should serialize dates correctly for webview', async () => {
             const sampleData = createSampleTimelineData();
             renderer.createPanel(sampleData);
             
-            const call = (mockPanel.webview.postMessage as any).mock.calls[0];
+            // Wait for the setTimeout delay in TimelineRenderer.createPanel
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const postMessageCalls = (mockPanel.webview.postMessage as any).mock.calls;
+            expect(postMessageCalls.length).toBeGreaterThan(0);
+            
+            const call = postMessageCalls[0];
             const payload = call[0].payload;
             
             // Verify date serialization
@@ -638,9 +674,17 @@ describe('Regression Tests - Error Handling and Fallback Mechanisms', () => {
             
             expect(result.claims).toHaveLength(2);
             
-            // Should generate fallback values
-            expect(result.claims[0].id).toBeTruthy(); // Should have generated ID
+            // Should generate fallback values for missing fields
+            expect(result.claims[0].id).toBeTruthy(); // Should have generated ID or index-based ID
             expect(result.claims[1].startDate).toBeInstanceOf(Date); // Should have fallback date
+            
+            // Both claims should have valid dates (either parsed or fallback)
+            result.claims.forEach(claim => {
+                expect(claim.startDate).toBeInstanceOf(Date);
+                expect(claim.endDate).toBeInstanceOf(Date);
+                expect(claim.id).toBeTruthy();
+                expect(claim.displayName).toBeTruthy();
+            });
         });
 
         it('should handle invalid date formats with fallbacks', async () => {

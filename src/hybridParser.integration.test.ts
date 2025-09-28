@@ -51,14 +51,14 @@ describe('HybridParser Integration', () => {
         expect(Array.isArray(result.claims)).toBe(true);
         expect(result.claims.length).toBe(2);
         
-        // Verify first claim
+        // Verify first claim (should be rx2 due to descending date sort - 2024-01-20 comes before 2024-01-15)
         const firstClaim = result.claims[0];
-        expect(firstClaim.id).toBe('rx1');
+        expect(firstClaim.id).toBe('rx2');
         expect(firstClaim.type).toBe('rxTba');
         expect(firstClaim.startDate).toBeInstanceOf(Date);
         expect(firstClaim.endDate).toBeInstanceOf(Date);
-        expect(firstClaim.displayName).toBe('Test Medication');
-        expect(firstClaim.details.dosage).toBe('10mg once daily');
+        expect(firstClaim.displayName).toBe('Another Med');
+        expect(firstClaim.details.dosage).toBe('5mg twice daily');
         
         // Verify timeline structure
         expect(result.dateRange).toBeDefined();

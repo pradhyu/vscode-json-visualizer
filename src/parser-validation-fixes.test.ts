@@ -431,8 +431,12 @@ describe('Parser Validation Fixes - Unit Tests', () => {
             const timelineData = parser['generateTimelineData'](claims);
             
             // Date range should span from earliest start to latest end
-            expect(timelineData.dateRange.start).toEqual(new Date('2024-01-01'));
-            expect(timelineData.dateRange.end).toEqual(new Date('2024-03-22')); // March 15 + 7 days
+            // Parser normalizes dates to local midnight, so we need to create local dates for comparison
+            const expectedStartDate = new Date(2024, 0, 1); // January 1, 2024 local midnight
+            const expectedEndDate = new Date(2024, 2, 22); // March 22, 2024 local midnight (March 15 + 7 days)
+            
+            expect(timelineData.dateRange.start).toEqual(expectedStartDate);
+            expect(timelineData.dateRange.end).toEqual(expectedEndDate);
             
             // Metadata should be correct
             expect(timelineData.metadata.totalClaims).toBe(2);

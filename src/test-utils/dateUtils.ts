@@ -12,8 +12,17 @@ import { expect } from 'vitest';
  * @returns Date object normalized to local midnight
  */
 export function createParserDate(dateString: string): Date {
+    // Parse the date string directly like the parser does
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+        const day = parseInt(parts[2], 10);
+        return new Date(year, month, day);
+    }
+    
+    // Fallback to original behavior if format is unexpected
     const date = new Date(dateString);
-    // Normalize to local midnight to match parser behavior
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
