@@ -263,6 +263,18 @@ export class TimelineRenderer {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Claims Timeline</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Debug D3 loading
+        console.log('D3 loading check:', typeof d3);
+        if (typeof d3 === 'undefined') {
+            console.error('D3.js failed to load!');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.innerHTML = '<div style="color: red; padding: 20px; text-align: center;"><h2>Error: D3.js Library Not Loaded</h2><p>The D3.js library failed to load. This might be due to network issues or Content Security Policy restrictions.</p></div>';
+            });
+        } else {
+            console.log('D3.js loaded successfully, version:', d3.version);
+        }
+    </script>
     <style>
         body {
             font-family: var(--vscode-font-family);
@@ -1004,6 +1016,8 @@ export class TimelineRenderer {
         const vscode = acquireVsCodeApi();
         let timelineData = null;
         let svg = null;
+        let zoomContainer = null;
+        let axesContainer = null;
         let xScale = null;
         let yScale = null;
         let zoom = null;
@@ -1024,9 +1038,66 @@ export class TimelineRenderer {
         };
         let filteredClaims = [];
         
+        // Test function for debugging zoom (can be called from browser console)
+        window.testZoom = function() {
+            console.log('=== ZOOM TEST ===');
+            console.log('svg:', svg);
+            console.log('zoom:', zoom);
+            console.log('SVG node:', svg ? svg.node() : 'null');
+            console.log('SVG dimensions:', svg ? svg.node().getBoundingClientRect() : 'null');
+            console.log('SVG has zoom behavior:', svg ? !!svg.node().__zoom : 'null');
+            
+            if (svg && zoom) {
+                console.log('Attempting programmatic zoom...');
+                try {
+                    svg.transition().duration(1000).call(zoom.scaleBy, 2);
+                    console.log('Zoom command executed successfully');
+                } catch (error) {
+                    console.error('Zoom command failed:', error);
+                }
+            } else {
+                console.log('Cannot test zoom - svg or zoom not available');
+            }
+        };
+
+        // Add debug info to the page
+        function addDebugInfo(message, type = 'info') {
+            const debugDiv = document.getElementById('debugInfo') || (() => {
+                const div = document.createElement('div');
+                div.id = 'debugInfo';
+                div.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; max-width: 300px; z-index: 10000; max-height: 200px; overflow-y: auto;';
+                document.body.appendChild(div);
+                return div;
+            })();
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#74c0fc';
+            debugDiv.innerHTML += '<div style="color: ' + color + '; margin-bottom: 2px;">[' + timestamp + '] ' + message + '</div>';
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+        }
+
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
+            addDebugInfo('DOM loaded, initializing timeline');
             console.log('WEBVIEW DIAGNOSTIC: DOM loaded, initializing timeline');
+            
+            const d3Available = typeof d3 !== 'undefined';
+            const timelineExists = !!document.getElementById('timeline');
+            
+            addDebugInfo('D3 available: ' + d3Available + (d3Available ? ' (v' + d3.version + ')' : ''));
+            addDebugInfo('Timeline element exists: ' + timelineExists);
+            
+            console.log('WEBVIEW DIAGNOSTIC: D3 version:', d3Available ? d3.version : 'D3 not loaded');
+            console.log('WEBVIEW DIAGNOSTIC: Timeline element exists:', timelineExists);
+            
+            if (!d3Available) {
+                addDebugInfo('D3.js not loaded, cannot initialize timeline', 'error');
+                console.error('WEBVIEW DIAGNOSTIC: D3.js not loaded, cannot initialize timeline');
+                document.getElementById('loading').innerHTML = '<div style="color: var(--vscode-errorForeground); text-align: center; padding: 40px;"><h3>Error: D3.js Library Not Available</h3><p>The timeline visualization requires D3.js library which failed to load.</p><p>This might be due to network connectivity or security restrictions.</p></div>';
+                return;
+            }
+            
+            addDebugInfo('Starting initialization...', 'info');
             initializeTimeline();
             initializeControls();
         });
@@ -1049,25 +1120,55 @@ export class TimelineRenderer {
         });
 
         function initializeTimeline() {
+            addDebugInfo('Initializing timeline...');
             console.log('WEBVIEW DIAGNOSTIC: Initializing timeline');
+            console.log('WEBVIEW DIAGNOSTIC: typeof d3:', typeof d3);
+            console.log('WEBVIEW DIAGNOSTIC: d3.zoom available:', typeof d3.zoom);
             
             try {
                 svg = d3.select('#timeline');
+                const svgExists = !svg.empty();
+                addDebugInfo('SVG selection: ' + (svgExists ? 'found' : 'not found'));
+                
+                console.log('WEBVIEW DIAGNOSTIC: SVG selected:', svg);
+                console.log('WEBVIEW DIAGNOSTIC: SVG node:', svg.node());
+                console.log('WEBVIEW DIAGNOSTIC: SVG empty:', svg.empty());
                 
                 if (svg.empty()) {
                     throw new Error('Timeline SVG element not found');
                 }
 
+                // Check SVG dimensions
+                const svgNode = svg.node();
+                const rect = svgNode.getBoundingClientRect();
+                addDebugInfo('SVG dimensions: ' + rect.width + 'x' + rect.height);
+                console.log('WEBVIEW DIAGNOSTIC: SVG dimensions:', rect.width, 'x', rect.height);
+                
+                // If SVG has no dimensions, set minimum dimensions
+                if (rect.width === 0 || rect.height === 0) {
+                    addDebugInfo('SVG has no dimensions, setting minimum size', 'info');
+                    svg.attr('width', '100%').attr('height', '100%');
+                    svg.style('min-width', '800px').style('min-height', '600px');
+                    
+                    // Re-check dimensions after setting
+                    const newRect = svgNode.getBoundingClientRect();
+                    addDebugInfo('SVG dimensions after resize: ' + newRect.width + 'x' + newRect.height);
+                }
+                
                 // Initialize enhanced zoom behavior with mouse controls
                 zoom = d3.zoom()
                     .scaleExtent([0.05, 20])
                     .wheelDelta(function(event) {
+                        addDebugInfo('Wheel event detected!', 'success');
+                        console.log('WEBVIEW DIAGNOSTIC: Wheel event:', event);
                         // Custom wheel delta for smoother zooming
                         const delta = -event.deltaY;
                         const scale = event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002;
                         return delta * scale * (event.ctrlKey ? 2 : 1); // Faster zoom with Ctrl
                     })
                     .filter(function(event) {
+                        addDebugInfo('Zoom filter: ' + event.type, 'info');
+                        console.log('WEBVIEW DIAGNOSTIC: Zoom filter called, event type:', event.type);
                         // Allow zoom with wheel, pan with drag, but prevent conflicts
                         return !event.ctrlKey || event.type === 'wheel';
                     })
@@ -1075,20 +1176,35 @@ export class TimelineRenderer {
                     .on('start', handleZoomStart)
                     .on('end', handleZoomEnd);
 
+                addDebugInfo('Zoom object created', 'success');
+                console.log('WEBVIEW DIAGNOSTIC: Zoom object created:', zoom);
+
+                // Apply zoom behavior
                 svg.call(zoom)
                     .on('dblclick.zoom', handleDoubleClick) // Custom double-click behavior
                     .on('contextmenu', handleRightClick); // Right-click context menu
 
+                const hasZoomBehavior = !!svg.node().__zoom;
+                addDebugInfo('Zoom behavior applied: ' + hasZoomBehavior, hasZoomBehavior ? 'success' : 'error');
+                
                 console.log('WEBVIEW DIAGNOSTIC: SVG element found and zoom initialized');
+                console.log('WEBVIEW DIAGNOSTIC: SVG has zoom behavior:', hasZoomBehavior);
+                
+                // Test if zoom behavior is working by trying to access zoom transform
+                const currentTransform = d3.zoomTransform(svgNode);
+                addDebugInfo('Initial transform: k=' + currentTransform.k + ', x=' + currentTransform.x + ', y=' + currentTransform.y);
+                console.log('WEBVIEW DIAGNOSTIC: Current zoom transform:', currentTransform);
 
                 vscode.postMessage({
                     command: 'ready',
                     payload: { status: 'initialized' }
                 });
 
+                addDebugInfo('Timeline initialization complete!', 'success');
                 console.log('WEBVIEW DIAGNOSTIC: Ready message sent to extension');
 
             } catch (error) {
+                addDebugInfo('Initialization error: ' + error.message, 'error');
                 console.error('WEBVIEW DIAGNOSTIC: Error initializing timeline:', error);
                 vscode.postMessage({
                     command: 'error',
@@ -1104,10 +1220,28 @@ export class TimelineRenderer {
         function updateZoomBehavior() {
             // Re-apply zoom behavior to ensure it works with the current container size
             if (svg && zoom) {
+                console.log('WEBVIEW DIAGNOSTIC: Updating zoom behavior');
+                
+                // Check SVG dimensions again
+                const svgNode = svg.node();
+                const rect = svgNode.getBoundingClientRect();
+                console.log('WEBVIEW DIAGNOSTIC: SVG dimensions during update:', rect.width, 'x', rect.height);
+                
+                // Re-apply zoom behavior
                 svg.call(zoom)
                     .on('dblclick.zoom', handleDoubleClick)
                     .on('contextmenu', handleRightClick);
+                
+                // Verify zoom behavior is applied
+                console.log('WEBVIEW DIAGNOSTIC: SVG has zoom behavior after update:', !!svg.node().__zoom);
+                
+                // Test zoom transform access
+                const currentTransform = d3.zoomTransform(svgNode);
+                console.log('WEBVIEW DIAGNOSTIC: Current zoom transform after update:', currentTransform);
+                
                 console.log('WEBVIEW DIAGNOSTIC: Zoom behavior updated for current view');
+            } else {
+                console.log('WEBVIEW DIAGNOSTIC: Cannot update zoom - svg or zoom not available');
             }
         }
 
@@ -1119,14 +1253,28 @@ export class TimelineRenderer {
             
             // Enhanced zoom controls
             document.getElementById('zoomIn').addEventListener('click', () => {
+                addDebugInfo('Zoom In button clicked');
+                console.log('WEBVIEW DIAGNOSTIC: Zoom in clicked, svg:', !!svg, 'zoom:', !!zoom);
                 if (svg && zoom) {
+                    addDebugInfo('Executing zoom in...', 'success');
+                    console.log('WEBVIEW DIAGNOSTIC: Executing zoom in');
                     svg.transition().duration(200).call(zoom.scaleBy, 1.4);
+                } else {
+                    addDebugInfo('Cannot zoom - svg or zoom not available', 'error');
+                    console.log('WEBVIEW DIAGNOSTIC: Cannot zoom - svg or zoom not available');
                 }
             });
 
             document.getElementById('zoomOut').addEventListener('click', () => {
+                addDebugInfo('Zoom Out button clicked');
+                console.log('WEBVIEW DIAGNOSTIC: Zoom out clicked, svg:', !!svg, 'zoom:', !!zoom);
                 if (svg && zoom) {
+                    addDebugInfo('Executing zoom out...', 'success');
+                    console.log('WEBVIEW DIAGNOSTIC: Executing zoom out');
                     svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.4);
+                } else {
+                    addDebugInfo('Cannot zoom - svg or zoom not available', 'error');
+                    console.log('WEBVIEW DIAGNOSTIC: Cannot zoom - svg or zoom not available');
                 }
             });
 
@@ -1227,15 +1375,21 @@ export class TimelineRenderer {
                 case '+':
                 case '=':
                     event.preventDefault();
-                    svg.transition().duration(150).call(zoom.scaleBy, zoomFactor);
+                    if (svg && zoom) {
+                        svg.transition().duration(150).call(zoom.scaleBy, zoomFactor);
+                    }
                     break;
                 case '-':
                     event.preventDefault();
-                    svg.transition().duration(150).call(zoom.scaleBy, 1 / zoomFactor);
+                    if (svg && zoom) {
+                        svg.transition().duration(150).call(zoom.scaleBy, 1 / zoomFactor);
+                    }
                     break;
                 case '0':
                     event.preventDefault();
-                    svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+                    if (svg && zoom) {
+                        svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+                    }
                     break;
                 case 'f':
                 case 'F':
@@ -1243,28 +1397,28 @@ export class TimelineRenderer {
                     zoomToFit();
                     break;
                 case 'ArrowLeft':
-                    if (event.shiftKey) {
+                    if (event.shiftKey && svg && zoom) {
                         event.preventDefault();
                         const width = svg.node().clientWidth;
                         svg.transition().duration(150).call(zoom.translateBy, width * panAmount, 0);
                     }
                     break;
                 case 'ArrowRight':
-                    if (event.shiftKey) {
+                    if (event.shiftKey && svg && zoom) {
                         event.preventDefault();
                         const width = svg.node().clientWidth;
                         svg.transition().duration(150).call(zoom.translateBy, -width * panAmount, 0);
                     }
                     break;
                 case 'ArrowUp':
-                    if (event.shiftKey) {
+                    if (event.shiftKey && svg && zoom) {
                         event.preventDefault();
                         const height = svg.node().clientHeight;
                         svg.transition().duration(150).call(zoom.translateBy, 0, height * panAmount);
                     }
                     break;
                 case 'ArrowDown':
-                    if (event.shiftKey) {
+                    if (event.shiftKey && svg && zoom) {
                         event.preventDefault();
                         const height = svg.node().clientHeight;
                         svg.transition().duration(150).call(zoom.translateBy, 0, -height * panAmount);
@@ -1282,18 +1436,19 @@ export class TimelineRenderer {
         }
 
         function handleZoom(event) {
+            console.log('WEBVIEW DIAGNOSTIC: Zoom event triggered:', event.transform);
+            addDebugInfo('Zoom transform: k=' + event.transform.k.toFixed(2) + ', x=' + event.transform.x.toFixed(0) + ', y=' + event.transform.y.toFixed(0), 'success');
             currentTransform = event.transform;
             
-            if (xScale && yScale) {
+            // Apply transform to zoom container (this moves all timeline elements)
+            if (zoomContainer) {
+                zoomContainer.attr('transform', currentTransform);
+            }
+            
+            // Update axes with rescaled scales (axes are outside zoom container)
+            if (xScale && yScale && axesContainer) {
                 const newXScale = currentTransform.rescaleX(xScale);
                 const newYScale = currentTransform.rescaleY(yScale);
-                
-                // Update timeline elements with smooth transitions
-                svg.selectAll('.claim-bar')
-                    .attr('x', d => newXScale(new Date(d.startDate)))
-                    .attr('y', (d, i) => newYScale(i))
-                    .attr('width', d => Math.max(1, newXScale(new Date(d.endDate)) - newXScale(new Date(d.startDate))))
-                    .attr('height', newYScale.bandwidth());
                 
                 // Update x-axis with adaptive formatting
                 const tickCount = Math.max(3, Math.min(20, Math.floor(currentTransform.k * 10)));
@@ -1310,7 +1465,7 @@ export class TimelineRenderer {
                     .ticks(tickCount)
                     .tickFormat(tickFormat);
                 
-                svg.select('.x-axis')
+                axesContainer.select('.x-axis')
                     .call(xAxis);
                 
                 // Update y-axis
@@ -1327,12 +1482,12 @@ export class TimelineRenderer {
                             displayName;
                     });
                 
-                svg.select('.y-axis')
+                axesContainer.select('.y-axis')
                     .call(yAxis);
-                
-                // Update zoom level indicator
-                updateZoomIndicator(currentTransform.k);
             }
+            
+            // Update zoom level indicator
+            updateZoomIndicator(currentTransform.k);
         }
 
         function handleZoomStart(event) {
@@ -1688,6 +1843,11 @@ export class TimelineRenderer {
                 renderLegend();
                 renderTimeline();
                 updateStats();
+                
+                // Re-apply zoom behavior after timeline is rendered
+                setTimeout(() => {
+                    updateZoomBehavior();
+                }, 100);
                 
                 // Show zoom hint for first-time users
                 setTimeout(() => {
@@ -2066,9 +2226,18 @@ export class TimelineRenderer {
                     .range([0, innerHeight])
                     .padding(0.1);
 
+                // Create main container with margins
                 const mainGroup = svg.append('g')
                     .attr('class', 'main-content')
                     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+                // Create zoom container that will receive transforms
+                zoomContainer = mainGroup.append('g')
+                    .attr('class', 'zoom-container');
+
+                // Create axes container (outside zoom transform)
+                axesContainer = mainGroup.append('g')
+                    .attr('class', 'axes-container');
 
                 const xAxis = d3.axisBottom(xScale)
                     .tickFormat(d3.timeFormat('%Y-%m-%d'))
@@ -2086,7 +2255,8 @@ export class TimelineRenderer {
                             displayName;
                     });
 
-                mainGroup.append('g')
+                // Add axes to axes container (not affected by zoom transform)
+                axesContainer.append('g')
                     .attr('class', 'x-axis axis')
                     .attr('transform', 'translate(0,' + innerHeight + ')')
                     .call(xAxis)
@@ -2096,11 +2266,12 @@ export class TimelineRenderer {
                     .attr('dy', '.15em')
                     .attr('transform', 'rotate(-45)');
 
-                mainGroup.append('g')
+                axesContainer.append('g')
                     .attr('class', 'y-axis axis')
                     .call(yAxis);
 
-                const claimBars = mainGroup.selectAll('.claim-bar')
+                // Add claim bars to zoom container (will be affected by zoom transform)
+                const claimBars = zoomContainer.selectAll('.claim-bar')
                     .data(timelineData.claims)
                     .enter()
                     .append('rect')
@@ -2119,6 +2290,17 @@ export class TimelineRenderer {
                     .on('click', handleClaimClick);
 
                 console.log('WEBVIEW DIAGNOSTIC: Timeline render completed successfully');
+                
+                // Re-apply zoom behavior after rendering
+                console.log('WEBVIEW DIAGNOSTIC: Re-applying zoom behavior after render');
+                addDebugInfo('Timeline rendered, updating zoom behavior');
+                
+                // Check SVG dimensions after rendering
+                const svgNode = svg.node();
+                const rect = svgNode.getBoundingClientRect();
+                addDebugInfo('SVG dimensions after render: ' + rect.width + 'x' + rect.height);
+                
+                updateZoomBehavior();
 
             } catch (error) {
                 console.error('WEBVIEW DIAGNOSTIC: Error rendering timeline:', error);
