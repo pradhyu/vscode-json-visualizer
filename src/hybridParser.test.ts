@@ -87,19 +87,30 @@ describe('HybridParser', () => {
         const mockError = new Error('ENOENT: no such file or directory');
         (mockError as any).code = 'ENOENT';
         
+        // Mock both sync and async fs methods to throw the error
         vi.mocked(fs.readFileSync).mockImplementation((path) => {
-            if (path === invalidPath) {
+            if (path.toString().includes('non-existent-file.json')) {
                 throw mockError;
             }
             return '{"rxTba": [{"id": "rx1", "dos": "2024-01-15", "dayssupply": 30, "medication": "Test Med"}]}';
+        });
+        
+        vi.mocked(fs.promises.readFile).mockImplementation((path) => {
+            if (path.toString().includes('non-existent-file.json')) {
+                return Promise.reject(mockError);
+            }
+            return Promise.resolve('{"rxTba": [{"id": "rx1", "dos": "2024-01-15", "dayssupply": 30, "medication": "Test Med"}]}');
         });
         
         await expect(hybridParser.parseFile(invalidPath)).rejects.toThrow();
     });
 
     it('should handle malformed JSON gracefully', async () => {
-        // Mock malformed JSON content
-        (fs.promises.readFile as any).mockResolvedValue('{ invalid json }');
+        const malformedJson = '{ invalid json }';
+        
+        // Mock both sync and async fs methods to return malformed JSON
+        vi.mocked(fs.readFileSync).mockReturnValue(malformedJson);
+        vi.mocked(fs.promises.readFile).mockResolvedValue(malformedJson);
         
         const tempPath = path.join(__dirname, 'temp-malformed.json');
         await expect(hybridParser.parseFile(tempPath)).rejects.toThrow();

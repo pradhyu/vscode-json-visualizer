@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import { ClaimsParser } from './claimsParser';
 import { HybridParser } from './hybridParser';
 import { TimelineRenderer } from './timelineRenderer';

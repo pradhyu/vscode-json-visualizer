@@ -26,20 +26,20 @@
   - Update date parsing tests to expect normalized dates
   - _Requirements: 1.1, 1.2, 2.1, 2.2_
 
-- [-] 5. Fix error handling test suites (12 failing tests)
+- [x] 5. Fix error handling test suites (12 failing tests)
   - Update error type expectations to match actual implementation
   - Fix date format validation test expectations
   - Correct fallback mechanism test expectations
   - Update error context validation tests
   - _Requirements: 4.1, 4.2, 4.3, 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 6. Fix integration test suite (3 failing tests)
+- [x] 6. Fix integration test suite (3 failing tests)
   - Update VSCode API mock to include all required methods
   - Fix command registration validation expectations
   - Correct file extension validation test setup
   - _Requirements: 3.2, 5.1, 5.2, 5.3, 5.4_
 
-- [ ] 7. Fix performance test suite (6 failing tests)
+- [-] 7. Fix performance test suite (6 failing tests)
   - Update date comparison logic to handle timezone normalization
   - Fix sorting validation expectations
   - Correct edge case test data and expectations

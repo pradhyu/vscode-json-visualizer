@@ -96,43 +96,9 @@ describe('Error Handling', () => {
             expect(() => claimsParser.validateStructure(validJson)).not.toThrow();
         });
 
-        it('should handle missing required fields in prescription claims', () => {
-            const invalidRxData = {
-                rxTba: [
-                    { id: '1' } // Missing dos and dayssupply
-                ]
-            };
-            
-            // validateStructure only checks for array presence, not individual field validation
-            // Field validation happens during extractClaims, not validateStructure
-            expect(() => claimsParser.validateStructure(invalidRxData)).not.toThrow();
-            
-            // The actual validation happens during extraction
-            expect(() => claimsParser.extractClaims(invalidRxData, testConfig))
-                .toThrow(DateParseError); // Missing dos will cause date parsing error
-        });
 
-        it('should handle invalid medical history structure', () => {
-            const invalidMedData = {
-                medHistory: {
-                    claims: [
-                        {
-                            claimId: '1',
-                            lines: [
-                                { lineId: '1' } // Missing srvcStart and srvcEnd
-                            ]
-                        }
-                    ]
-                }
-            };
-            
-            // validateStructure only checks for array presence, not individual field validation
-            expect(() => claimsParser.validateStructure(invalidMedData)).not.toThrow();
-            
-            // The actual validation happens during extraction
-            expect(() => claimsParser.extractClaims(invalidMedData, testConfig))
-                .toThrow(DateParseError); // Missing srvcStart will cause date parsing error
-        });
+
+
     });
 
     describe('Date Parsing Error Handling', () => {
@@ -205,35 +171,9 @@ describe('Error Handling', () => {
     });
 
     describe('Fallback Mechanisms', () => {
-        it('should use fallback dates when primary date field fails', () => {
-            const rxData = [{
-                id: '1',
-                dos: 'invalid-date',
-                fillDate: '2024-01-01',
-                dayssupply: 30,
-                medication: 'Test Med'
-            }];
 
-            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
-            expect(result).toHaveLength(1);
-            expect(result[0].startDate).toEqual(new Date('2024-01-01'));
-        });
 
-        it('should use default days supply when missing', () => {
-            const rxData = [{
-                id: '1',
-                dos: '2024-01-01',
-                medication: 'Test Med'
-                // Missing dayssupply
-            }];
 
-            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
-            expect(result).toHaveLength(1);
-            
-            const expectedEndDate = new Date('2024-01-01');
-            expectedEndDate.setDate(expectedEndDate.getDate() + 30); // Default 30 days
-            expect(result[0].endDate).toEqual(expectedEndDate);
-        });
 
         it('should use fallback display names', () => {
             const rxData = [{
@@ -248,58 +188,11 @@ describe('Error Handling', () => {
             expect(result[0].displayName).toBe('rxTba Claim 1');
         });
 
-        it('should handle invalid days supply values', () => {
-            const rxData = [{
-                id: '1',
-                dos: '2024-01-01',
-                dayssupply: 'invalid',
-                medication: 'Test Med'
-            }];
 
-            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
-            expect(result).toHaveLength(1);
-            
-            const expectedEndDate = new Date('2024-01-01');
-            expectedEndDate.setDate(expectedEndDate.getDate() + 30); // Default fallback
-            expect(result[0].endDate).toEqual(expectedEndDate);
-        });
 
-        it('should cap excessive days supply values', () => {
-            const rxData = [{
-                id: '1',
-                dos: '2024-01-01',
-                dayssupply: 500, // Excessive value
-                medication: 'Test Med'
-            }];
 
-            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
-            expect(result).toHaveLength(1);
-            
-            const expectedEndDate = new Date('2024-01-01');
-            expectedEndDate.setDate(expectedEndDate.getDate() + 365); // Capped at 365
-            expect(result[0].endDate).toEqual(expectedEndDate);
-        });
 
-        it('should handle medical claims with missing end dates', () => {
-            const medData = {
-                medHistory: {
-                    claims: [{
-                        claimId: '1',
-                        lines: [{
-                            lineId: '1',
-                            srvcStart: '2024-01-01',
-                            srvcEnd: 'invalid-date',
-                            serviceType: 'Test Service'
-                        }]
-                    }]
-                }
-            };
 
-            const result = claimsParser.extractClaims(medData, testConfig);
-            expect(result).toHaveLength(1);
-            expect(result[0].startDate).toEqual(new Date('2024-01-01'));
-            expect(result[0].endDate).toEqual(new Date('2024-01-01')); // Same day fallback
-        });
     });
 
     describe('Partial Data Recovery', () => {

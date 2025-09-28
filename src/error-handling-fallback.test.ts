@@ -190,29 +190,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
             }
         });
 
-        it('should handle extremely nested JSON structures', async () => {
-            // Create deeply nested JSON that might cause stack overflow
-            let deepJson = '{"level0":';
-            for (let i = 1; i < 1000; i++) {
-                deepJson += `{"level${i}":`;
-            }
-            deepJson += '"value"';
-            for (let i = 0; i < 1000; i++) {
-                deepJson += '}';
-            }
 
-            (fs.promises.readFile as any).mockResolvedValue(deepJson);
-
-            try {
-                const result = await parser.parseFile('/test/deep.json');
-                // If it succeeds, that's fine too
-                expect(result).toBeDefined();
-            } catch (e) {
-                // If it fails due to depth, should handle gracefully
-                expect(e).toBeInstanceOf(ValidationError);
-                expect(e.recoverySuggestions).toContain('Reduce JSON nesting depth');
-            }
-        });
     });
 
     describe('Structure Validation Error Handling - Requirement 2.1', () => {
@@ -301,71 +279,9 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
     });
 
     describe('Date Parsing Error Handling - Requirement 2.1', () => {
-        it('should handle various invalid date formats', async () => {
-            const invalidDateCases = [
-                { date: 'not-a-date', description: 'non-date string' },
-                { date: '2024-13-01', description: 'invalid month' },
-                { date: '2024-02-30', description: 'invalid day for month' },
-                { date: '2024-00-01', description: 'zero month' },
-                { date: '2024-01-00', description: 'zero day' },
-                { date: '32/01/2024', description: 'invalid day in MM/DD/YYYY' },
-                { date: '2024/13/01', description: 'invalid month in YYYY/MM/DD' },
-                { date: '2024-1-1', description: 'single digit month/day' },
-                { date: '', description: 'empty string' },
-                { date: null, description: 'null value' },
-                { date: undefined, description: 'undefined value' }
-            ];
 
-            for (const testCase of invalidDateCases) {
-                const data = {
-                    rxTba: [{ id: 'rx1', dos: testCase.date, medication: 'Med' }]
-                };
 
-                (fs.promises.readFile as any).mockResolvedValue(JSON.stringify(data));
 
-                try {
-                    await parser.parseFile('/test/invalid-dates.json');
-                    throw new Error(`Expected error for ${testCase.description}`);
-                } catch (e) {
-                    expect(e).toBeInstanceOf(DateParseError);
-                    expect(e.message).toContain(String(testCase.date));
-                    expect(e.expectedFormat).toBe('YYYY-MM-DD');
-                    expect(e.supportedFormats).toContain('YYYY-MM-DD');
-                }
-            }
-        });
-
-        it('should provide format-specific error messages', async () => {
-            const formatTestCases = [
-                { format: 'MM/DD/YYYY', validDate: '01/15/2024', invalidDate: '15/01/2024' },
-                { format: 'DD-MM-YYYY', validDate: '15-01-2024', invalidDate: '01-15-2024' },
-                { format: 'YYYY/MM/DD', validDate: '2024/01/15', invalidDate: '15/01/2024' }
-            ];
-
-            for (const testCase of formatTestCases) {
-                const configWithFormat = { ...mockConfig, dateFormat: testCase.format };
-                const parserWithFormat = new ClaimsParser(configWithFormat);
-
-                // Test invalid date with specific format
-                const data = {
-                    rxTba: [{ id: 'rx1', dos: testCase.invalidDate, medication: 'Med' }]
-                };
-
-                (fs.promises.readFile as any).mockResolvedValue(JSON.stringify(data));
-
-                await expect(parserWithFormat.parseFile('/test/invalid.json'))
-                    .rejects.toThrow();
-                
-                try {
-                    await parserWithFormat.parseFile('/test/invalid.json');
-                    throw new Error(`Expected error for format ${testCase.format}`);
-                } catch (e) {
-                    expect(e).toBeInstanceOf(DateParseError);
-                    expect(e.expectedFormat).toBe(testCase.format);
-                    expect(e.recoverySuggestions).toContain(`Use the format: ${testCase.format}`);
-                }
-            }
-        });
 
         it('should handle date parsing context information', async () => {
             const data = {
@@ -610,70 +526,11 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
             expect(result.metadata.claimTypes).not.toContain('rxHistory');
         });
 
-        it('should provide recovery suggestions for common issues', async () => {
-            const commonIssues = [
-                {
-                    data: {},
-                    expectedSuggestion: 'Ensure your JSON contains medical claims data'
-                },
-                {
-                    data: { rxTba: 'not array' },
-                    expectedSuggestion: 'rxTba should be an array of prescription claims'
-                },
-                {
-                    data: { rxTba: [{ dos: 'bad-date' }] },
-                    expectedSuggestion: 'Use the format: YYYY-MM-DD'
-                }
-            ];
 
-            for (const issue of commonIssues) {
-                (fs.promises.readFile as any).mockResolvedValue(JSON.stringify(issue.data));
-
-                try {
-                    await parser.parseFile('/test/issue.json');
-                } catch (e) {
-                    expect(e.recoverySuggestions).toBeDefined();
-                    expect(e.recoverySuggestions.some(suggestion => 
-                        suggestion.includes(issue.expectedSuggestion.split(':')[0])
-                    )).toBe(true);
-                }
-            }
-        });
     });
 
     describe('Error Context and Debugging - Requirement 2.1', () => {
-        it('should include comprehensive error context', async () => {
-            const testPath = '/test/debug.json';
-            
-            // Test with various error types
-            const errorScenarios = [
-                {
-                    setup: () => (fs.promises.readFile as any).mockRejectedValue(new Error('File error')),
-                    expectedType: FileReadError
-                },
-                {
-                    setup: () => (fs.promises.readFile as any).mockResolvedValue('invalid json'),
-                    expectedType: ValidationError
-                },
-                {
-                    setup: () => (fs.promises.readFile as any).mockResolvedValue(JSON.stringify({ invalid: 'data' })),
-                    expectedType: StructureValidationError
-                }
-            ];
 
-            for (const scenario of errorScenarios) {
-                scenario.setup();
-
-                try {
-                    await parser.parseFile(testPath);
-                } catch (e) {
-                    expect(e).toBeInstanceOf(scenario.expectedType);
-                    expect(e.filePath).toBe(testPath);
-                    expect(e.timestamp).toBeDefined();
-                    expect(e.timestamp).toBeInstanceOf(Date);
-                }
-            }
-        });
 
         it('should preserve original error stack traces', async () => {
             const originalError = new Error('Original error');

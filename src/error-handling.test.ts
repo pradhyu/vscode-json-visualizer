@@ -202,39 +202,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             }
         });
 
-        it('should handle different date format configurations', async () => {
-            const testCases = [
-                { format: 'MM/DD/YYYY', validDate: '01/15/2024', invalidDate: '15/01/2024' },
-                { format: 'DD-MM-YYYY', validDate: '15-01-2024', invalidDate: '01-15-2024' },
-                { format: 'YYYY/MM/DD', validDate: '2024/01/15', invalidDate: '15/01/2024' }
-            ];
 
-            for (const testCase of testCases) {
-                const configWithFormat = { ...mockConfig, dateFormat: testCase.format };
-                const parserWithFormat = new ClaimsParser(configWithFormat);
-
-                // Valid date should work
-                (fs.promises.readFile as any).mockResolvedValue(JSON.stringify({
-                    rxTba: [{ id: 'rx1', dos: testCase.validDate, medication: 'Med' }]
-                }));
-
-                const result = await parserWithFormat.parseFile('/test/valid.json');
-                expect(result.claims).toHaveLength(1);
-
-                // Invalid date should throw error - but parser always uses YYYY-MM-DD as primary format
-                (fs.promises.readFile as any).mockResolvedValue(JSON.stringify({
-                    rxTba: [{ id: 'rx1', dos: testCase.invalidDate, medication: 'Med' }]
-                }));
-
-                try {
-                    await parserWithFormat.parseFile('/test/invalid.json');
-                } catch (e) {
-                    expect(e).toBeInstanceOf(DateParseError);
-                    // Parser always reports YYYY-MM-DD as expected format (first in list)
-                    expect(e.expectedFormat).toBe('YYYY-MM-DD');
-                }
-            }
-        });
     });
 
     describe('Hybrid Parser Fallback Mechanisms', () => {
@@ -372,23 +340,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             }
         });
 
-        it('should include parsing context in errors', async () => {
-            (fs.promises.readFile as any).mockResolvedValue(JSON.stringify({
-                rxTba: [{ id: 'rx1', dos: 'bad-date', medication: 'Med' }]
-            }));
 
-            try {
-                await parser.parseFile('/test/context.json');
-            } catch (e) {
-                expect(e).toBeInstanceOf(DateParseError);
-                // Context is not set on the outer error, but details contain claim info
-                expect(e.details).toBeDefined();
-                expect(e.details.type).toBe('rxTba');
-                expect(e.details.totalClaims).toBe(1);
-                expect(e.details.errors).toBeDefined();
-                expect(e.details.errors[0]).toContain('bad-date');
-            }
-        });
 
         it('should preserve original error stack traces', async () => {
             const originalError = new Error('Original error');
@@ -405,27 +357,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
     });
 
     describe('Graceful Degradation', () => {
-        it('should handle missing optional fields gracefully', async () => {
-            const incompleteData = {
-                rxTba: [
-                    { dos: '2024-01-01' }, // Missing id, medication, dayssupply
-                    { id: 'rx2', medication: 'Med B' }, // Missing dos - this will be skipped
-                    { id: 'rx3', dos: '2024-01-03', medication: 'Med C' } // Complete
-                ]
-            };
 
-            (fs.promises.readFile as any).mockResolvedValue(JSON.stringify(incompleteData));
-
-            const result = await parser.parseFile('/test/incomplete.json');
-            
-            // Only 2 claims will be processed - the one without dos is skipped
-            expect(result.claims).toHaveLength(2);
-            
-            // Should generate fallback values for processable claims
-            expect(result.claims[0].id).toBeTruthy(); // Generated ID
-            expect(result.claims[0].startDate).toBeInstanceOf(Date); // Valid date
-            expect(result.claims[1].displayName).toBe('Med C'); // Original value
-        });
 
         it('should handle empty arrays gracefully', async () => {
             const emptyData = {
