@@ -39,6 +39,7 @@ const HtmlGenerator_1 = require("./generator/HtmlGenerator");
 const ConfigManager_1 = require("./config/ConfigManager");
 const validators_1 = require("./utils/validators");
 const formatters_1 = require("./utils/formatters");
+const folderProcessor_1 = require("./utils/folderProcessor");
 const program = new commander_1.Command();
 program
     .name('claims-timeline')
@@ -48,79 +49,268 @@ program
 program
     .command('generate')
     .alias('gen')
-    .description('Generate timeline visualization from JSON file')
-    .argument('<input>', 'Input JSON file path')
-    .option('-o, --output <path>', 'Output HTML file path', 'timeline.html')
+    .description('Generate timeline visualization from JSON file or folder')
+    .argument('<input>', 'Input JSON file path or folder path')
+    .option('-o, --output <path>', 'Output HTML file path or directory', 'timeline.html')
     .option('-c, --config <path>', 'Configuration file path')
-    .option('--open', 'Open generated HTML file in browser')
+    .option('--open', 'Open generated HTML file(s) in browser')
     .option('--theme <theme>', 'Color theme (light|dark|auto)', 'auto')
     .option('--title <title>', 'Timeline title')
     .option('--no-interactive', 'Disable interactive features')
     .option('--format <format>', 'Date format (YYYY-MM-DD|MM/DD/YYYY|DD-MM-YYYY)', 'YYYY-MM-DD')
     .option('--width <width>', 'Timeline width in pixels', '1200')
     .option('--height <height>', 'Timeline height in pixels', '600')
+    .option('--recursive', 'Process subfolders recursively (folder mode only)')
     .action(async (input, options) => {
     const startTime = Date.now();
-    const spinner = (0, ora_1.default)('Processing medical claims data...').start();
     try {
-        // Validate input file
-        await (0, validators_1.validateJsonFile)(input);
-        // Validate output path
-        await (0, validators_1.validateOutputPath)(options.output);
-        // Load configuration
-        const configManager = new ConfigManager_1.ConfigManager();
-        if (options.config) {
-            await configManager.loadConfig(options.config);
+        // Check if input is a file or folder
+        const stats = fs.statSync(input);
+        const isFolder = stats.isDirectory();
+        if (isFolder) {
+            // Folder processing mode
+            await processFolderMode(input, options, startTime);
         }
-        // Update config with CLI options
-        configManager.updateFromCliOptions(options);
-        spinner.text = 'Parsing JSON data...';
-        // Parse claims data
-        const parser = new ClaimsParser_1.ClaimsParser(configManager.getConfig());
-        const timelineData = await parser.parseFile(input);
-        spinner.text = 'Generating HTML visualization...';
-        // Generate HTML
-        const htmlGenerator = new HtmlGenerator_1.HtmlGenerator({
-            theme: options.theme,
-            title: options.title || `Medical Claims Timeline - ${path.basename(input)}`,
-            interactive: options.interactive !== false,
-            width: parseInt(options.width),
-            height: parseInt(options.height)
+        else {
+            // Single file processing mode
+            await processSingleFileMode(input, options, startTime);
+        }
+    }
+    catch (error) {
+        console.error(chalk_1.default.red('Error:'), error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+// Helper function for single file processing
+async function processSingleFileMode(input, options, startTime) {
+    const spinner = (0, ora_1.default)('Processing medical claims data...').start();
+    // Validate input file
+    await (0, validators_1.validateJsonFile)(input);
+    // Validate output path
+    await (0, validators_1.validateOutputPath)(options.output);
+    // Load configuration
+    const configManager = new ConfigManager_1.ConfigManager();
+    if (options.config) {
+        await configManager.loadConfig(options.config);
+    }
+    // Update config with CLI options
+    configManager.updateFromCliOptions(options);
+    spinner.text = 'Parsing JSON data...';
+    // Parse claims data
+    const parser = new ClaimsParser_1.ClaimsParser(configManager.getConfig());
+    const timelineData = await parser.parseFile(input);
+    spinner.text = 'Generating HTML visualization...';
+    // Generate HTML
+    const htmlGenerator = new HtmlGenerator_1.HtmlGenerator({
+        theme: options.theme,
+        title: options.title || `Medical Claims Timeline - ${path.basename(input)}`,
+        interactive: options.interactive !== false,
+        width: parseInt(options.width),
+        height: parseInt(options.height)
+    });
+    const html = htmlGenerator.generate(timelineData);
+    // Write output file
+    fs.writeFileSync(options.output, html);
+    const duration = Date.now() - startTime;
+    const fileSize = fs.statSync(options.output).size;
+    spinner.succeed(chalk_1.default.green('Timeline generated successfully!'));
+    // Display summary
+    console.log();
+    console.log(chalk_1.default.bold('📊 Generation Summary:'));
+    console.log(`   Input:     ${chalk_1.default.cyan(input)}`);
+    console.log(`   Output:    ${chalk_1.default.cyan(options.output)}`);
+    console.log(`   Claims:    ${chalk_1.default.yellow(timelineData.metadata.totalClaims)}`);
+    console.log(`   Types:     ${chalk_1.default.yellow(timelineData.metadata.claimTypes.join(', '))}`);
+    console.log(`   Size:      ${chalk_1.default.yellow((0, formatters_1.formatFileSize)(fileSize))}`);
+    console.log(`   Duration:  ${chalk_1.default.yellow((0, formatters_1.formatDuration)(duration))}`);
+    console.log();
+    // Open in browser if requested
+    if (options.open) {
+        const openSpinner = (0, ora_1.default)('Opening in browser...').start();
+        try {
+            await (0, open_1.default)(path.resolve(options.output));
+            openSpinner.succeed('Opened in browser');
+        }
+        catch (error) {
+            openSpinner.fail('Failed to open in browser');
+            console.log(chalk_1.default.yellow(`Please open manually: ${path.resolve(options.output)}`));
+        }
+    }
+    else {
+        console.log(chalk_1.default.dim(`To view: open ${path.resolve(options.output)}`));
+    }
+}
+// Helper function for folder processing
+async function processFolderMode(input, options, startTime) {
+    const spinner = (0, ora_1.default)('Scanning folder for JSON files...').start();
+    // Validate folder
+    await (0, validators_1.validateFolder)(input);
+    // Load configuration
+    const configManager = new ConfigManager_1.ConfigManager();
+    if (options.config) {
+        await configManager.loadConfig(options.config);
+    }
+    configManager.updateFromCliOptions(options);
+    // Create folder processor
+    const parser = new ClaimsParser_1.ClaimsParser(configManager.getConfig());
+    const folderProcessor = new folderProcessor_1.FolderProcessor(parser);
+    // Scan folder first
+    spinner.text = 'Scanning for JSON files...';
+    const files = await folderProcessor.scanFolder(input, options.recursive);
+    const validFiles = files.filter(f => f.isValidClaims);
+    if (validFiles.length === 0) {
+        spinner.fail('No valid medical claims JSON files found');
+        console.log();
+        console.log(chalk_1.default.yellow('📁 Folder Scan Results:'));
+        console.log(`   Total JSON files: ${files.length}`);
+        console.log(`   Valid claims files: ${validFiles.length}`);
+        console.log();
+        console.log(chalk_1.default.dim('Tip: Ensure JSON files contain rxTba, rxHistory, or medHistory data'));
+        return;
+    }
+    spinner.succeed(`Found ${validFiles.length} valid claims files`);
+    // Show file list
+    console.log();
+    console.log(chalk_1.default.bold('📋 Found Claims Files:'));
+    validFiles.forEach((file, index) => {
+        const claimsInfo = file.claimsCount ? `${file.claimsCount} claims` : 'unknown';
+        const typesInfo = file.claimTypes ? `(${file.claimTypes.join(', ')})` : '';
+        console.log(`   ${index + 1}. ${chalk_1.default.cyan(file.name)} - ${claimsInfo} ${typesInfo}`);
+    });
+    console.log();
+    // Determine output directory
+    const outputDir = path.isAbsolute(options.output)
+        ? options.output
+        : path.join(input, options.output === 'timeline.html' ? 'timelines' : options.output);
+    // Process folder
+    spinner.start('Processing files...');
+    const result = await folderProcessor.processFolder(input, {
+        recursive: options.recursive,
+        outputDir,
+        theme: options.theme,
+        width: parseInt(options.width),
+        height: parseInt(options.height),
+        interactive: options.interactive !== false,
+        openAfter: options.open
+    });
+    const duration = Date.now() - startTime;
+    if (result.processedFiles > 0) {
+        spinner.succeed(chalk_1.default.green(`Successfully processed ${result.processedFiles} files!`));
+    }
+    else {
+        spinner.fail('No files were processed successfully');
+    }
+    // Display summary
+    console.log();
+    console.log(chalk_1.default.bold('📊 Folder Processing Summary:'));
+    console.log(`   Input Folder:    ${chalk_1.default.cyan(input)}`);
+    console.log(`   Output Folder:   ${chalk_1.default.cyan(outputDir)}`);
+    console.log(`   Files Found:     ${chalk_1.default.yellow(result.totalFiles)}`);
+    console.log(`   Files Processed: ${chalk_1.default.green(result.processedFiles)}`);
+    console.log(`   Files Failed:    ${chalk_1.default.red(result.failedFiles)}`);
+    console.log(`   Total Claims:    ${chalk_1.default.yellow(result.summary.totalClaims)}`);
+    console.log(`   Claim Types:     ${chalk_1.default.yellow(Array.from(result.summary.claimTypes).join(', '))}`);
+    if (result.summary.dateRange) {
+        console.log(`   Date Range:      ${chalk_1.default.yellow(result.summary.dateRange.start.toLocaleDateString())} - ${chalk_1.default.yellow(result.summary.dateRange.end.toLocaleDateString())}`);
+    }
+    console.log(`   Duration:        ${chalk_1.default.yellow((0, formatters_1.formatDuration)(duration))}`);
+    console.log();
+    // Show errors if any
+    if (result.errors.length > 0) {
+        console.log(chalk_1.default.bold.red('❌ Processing Errors:'));
+        result.errors.forEach(error => {
+            console.log(`   ${chalk_1.default.red(error.file)}: ${error.error}`);
         });
-        const html = htmlGenerator.generate(timelineData);
-        // Write output file
-        fs.writeFileSync(options.output, html);
-        const duration = Date.now() - startTime;
-        const fileSize = fs.statSync(options.output).size;
-        spinner.succeed(chalk_1.default.green('Timeline generated successfully!'));
-        // Display summary
         console.log();
-        console.log(chalk_1.default.bold('📊 Generation Summary:'));
-        console.log(`   Input:     ${chalk_1.default.cyan(input)}`);
-        console.log(`   Output:    ${chalk_1.default.cyan(options.output)}`);
-        console.log(`   Claims:    ${chalk_1.default.yellow(timelineData.metadata.totalClaims)}`);
-        console.log(`   Types:     ${chalk_1.default.yellow(timelineData.metadata.claimTypes.join(', '))}`);
-        console.log(`   Size:      ${chalk_1.default.yellow((0, formatters_1.formatFileSize)(fileSize))}`);
-        console.log(`   Duration:  ${chalk_1.default.yellow((0, formatters_1.formatDuration)(duration))}`);
+    }
+    // Show output files
+    if (result.outputFiles.length > 0) {
+        console.log(chalk_1.default.bold('📄 Generated Files:'));
+        result.outputFiles.forEach(file => {
+            console.log(`   ${chalk_1.default.cyan(path.basename(file))}`);
+        });
         console.log();
-        // Open in browser if requested
-        if (options.open) {
-            const openSpinner = (0, ora_1.default)('Opening in browser...').start();
+        console.log(chalk_1.default.dim(`Files saved to: ${outputDir}`));
+        // Open first file if requested
+        if (options.open && result.outputFiles.length > 0) {
+            const openSpinner = (0, ora_1.default)('Opening first timeline in browser...').start();
             try {
-                await (0, open_1.default)(path.resolve(options.output));
+                await (0, open_1.default)(path.resolve(result.outputFiles[0]));
                 openSpinner.succeed('Opened in browser');
             }
             catch (error) {
                 openSpinner.fail('Failed to open in browser');
-                console.log(chalk_1.default.yellow(`Please open manually: ${path.resolve(options.output)}`));
+                console.log(chalk_1.default.yellow(`Please open manually: ${path.resolve(result.outputFiles[0])}`));
             }
         }
+    }
+}
+// Folder command
+program
+    .command('folder')
+    .alias('dir')
+    .description('Process all JSON files in a folder')
+    .argument('<folder>', 'Folder path containing JSON files')
+    .option('-o, --output <dir>', 'Output directory for HTML files', 'timelines')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('--open', 'Open first generated timeline in browser')
+    .option('--theme <theme>', 'Color theme (light|dark|auto)', 'auto')
+    .option('--format <format>', 'Date format', 'YYYY-MM-DD')
+    .option('--width <width>', 'Timeline width in pixels', '1200')
+    .option('--height <height>', 'Timeline height in pixels', '600')
+    .option('--recursive', 'Process subfolders recursively')
+    .option('--list-only', 'Only list files, don\'t process them')
+    .action(async (folder, options) => {
+    const startTime = Date.now();
+    try {
+        await (0, validators_1.validateFolder)(folder);
+        const configManager = new ConfigManager_1.ConfigManager();
+        if (options.config) {
+            await configManager.loadConfig(options.config);
+        }
+        configManager.updateFromCliOptions(options);
+        const parser = new ClaimsParser_1.ClaimsParser(configManager.getConfig());
+        const folderProcessor = new folderProcessor_1.FolderProcessor(parser);
+        if (options.listOnly) {
+            // List mode
+            const spinner = (0, ora_1.default)('Scanning folder...').start();
+            const files = await folderProcessor.scanFolder(folder, options.recursive);
+            spinner.succeed(`Found ${files.length} JSON files`);
+            console.log();
+            console.log(chalk_1.default.bold('📁 JSON Files Found:'));
+            const validFiles = files.filter(f => f.isValidClaims);
+            const invalidFiles = files.filter(f => !f.isValidClaims);
+            if (validFiles.length > 0) {
+                console.log();
+                console.log(chalk_1.default.bold.green('✅ Valid Claims Files:'));
+                validFiles.forEach((file, index) => {
+                    const claimsInfo = file.claimsCount ? `${file.claimsCount} claims` : 'unknown';
+                    const typesInfo = file.claimTypes ? `(${file.claimTypes.join(', ')})` : '';
+                    const sizeInfo = (0, formatters_1.formatFileSize)(file.size);
+                    console.log(`   ${index + 1}. ${chalk_1.default.cyan(file.name)} - ${claimsInfo} ${typesInfo} [${sizeInfo}]`);
+                });
+            }
+            if (invalidFiles.length > 0) {
+                console.log();
+                console.log(chalk_1.default.bold.yellow('⚠️  Other JSON Files:'));
+                invalidFiles.forEach((file, index) => {
+                    const sizeInfo = (0, formatters_1.formatFileSize)(file.size);
+                    const errorInfo = file.error ? ` (${file.error})` : '';
+                    console.log(`   ${index + 1}. ${chalk_1.default.dim(file.name)} [${sizeInfo}]${errorInfo}`);
+                });
+            }
+            console.log();
+            console.log(chalk_1.default.bold('📊 Summary:'));
+            console.log(`   Total JSON files: ${files.length}`);
+            console.log(`   Valid claims files: ${chalk_1.default.green(validFiles.length)}`);
+            console.log(`   Other files: ${chalk_1.default.yellow(invalidFiles.length)}`);
+        }
         else {
-            console.log(chalk_1.default.dim(`To view: open ${path.resolve(options.output)}`));
+            // Process mode
+            await processFolderMode(folder, { ...options, output: options.output }, startTime);
         }
     }
     catch (error) {
-        spinner.fail('Generation failed');
         console.error(chalk_1.default.red('Error:'), error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
@@ -136,29 +326,51 @@ program
     try {
         const answers = await inquirer_1.default.prompt([
             {
+                type: 'list',
+                name: 'inputType',
+                message: 'What would you like to process?',
+                choices: [
+                    { name: 'Single JSON file', value: 'file' },
+                    { name: 'Folder with JSON files', value: 'folder' }
+                ]
+            },
+            {
                 type: 'input',
                 name: 'input',
-                message: 'Path to JSON file:',
-                validate: async (input) => {
+                message: (answers) => answers.inputType === 'file' ? 'Path to JSON file:' : 'Path to folder:',
+                validate: async (input, answers) => {
                     try {
-                        await (0, validators_1.validateJsonFile)(input);
+                        if (answers.inputType === 'file') {
+                            await (0, validators_1.validateJsonFile)(input);
+                        }
+                        else {
+                            await (0, validators_1.validateFolder)(input);
+                        }
                         return true;
                     }
                     catch (error) {
-                        return error instanceof Error ? error.message : 'Invalid file';
+                        return error instanceof Error ? error.message : 'Invalid path';
                     }
                 }
             },
             {
                 type: 'input',
                 name: 'output',
-                message: 'Output HTML file:',
-                default: 'timeline.html'
+                message: (answers) => answers.inputType === 'file' ? 'Output HTML file:' : 'Output directory:',
+                default: (answers) => answers.inputType === 'file' ? 'timeline.html' : 'timelines'
             },
             {
                 type: 'input',
                 name: 'title',
                 message: 'Timeline title (optional):',
+                when: (answers) => answers.inputType === 'file'
+            },
+            {
+                type: 'confirm',
+                name: 'recursive',
+                message: 'Process subfolders recursively?',
+                default: true,
+                when: (answers) => answers.inputType === 'folder'
             },
             {
                 type: 'list',
@@ -177,18 +389,31 @@ program
             {
                 type: 'confirm',
                 name: 'open',
-                message: 'Open in browser after generation?',
+                message: (answers) => answers.inputType === 'file'
+                    ? 'Open in browser after generation?'
+                    : 'Open first timeline in browser after generation?',
                 default: true
             }
         ]);
         // Execute generation with answers
-        await program.parseAsync(['node', 'claims-timeline', 'generate', answers.input,
-            '--output', answers.output,
-            '--theme', answers.theme,
-            '--format', answers.format,
-            ...(answers.title ? ['--title', answers.title] : []),
-            ...(answers.open ? ['--open'] : [])
-        ]);
+        if (answers.inputType === 'file') {
+            await program.parseAsync(['node', 'claims-timeline', 'generate', answers.input,
+                '--output', answers.output,
+                '--theme', answers.theme,
+                '--format', answers.format,
+                ...(answers.title ? ['--title', answers.title] : []),
+                ...(answers.open ? ['--open'] : [])
+            ]);
+        }
+        else {
+            await program.parseAsync(['node', 'claims-timeline', 'folder', answers.input,
+                '--output', answers.output,
+                '--theme', answers.theme,
+                '--format', answers.format,
+                ...(answers.recursive ? ['--recursive'] : []),
+                ...(answers.open ? ['--open'] : [])
+            ]);
+        }
     }
     catch (error) {
         console.error(chalk_1.default.red('Interactive mode failed:'), error);
@@ -270,10 +495,16 @@ program
     console.log(chalk_1.default.dim('   # Generate timeline from JSON file'));
     console.log('   claims-timeline generate data.json');
     console.log();
-    console.log(chalk_1.default.dim('   # Generate with custom output and open in browser'));
-    console.log('   claims-timeline generate data.json -o my-timeline.html --open');
+    console.log(chalk_1.default.dim('   # Generate from folder with JSON files'));
+    console.log('   claims-timeline generate /path/to/folder --recursive');
     console.log();
-    console.log(chalk_1.default.dim('   # Interactive mode'));
+    console.log(chalk_1.default.dim('   # Process folder with custom output'));
+    console.log('   claims-timeline folder /path/to/data -o output-dir --open');
+    console.log();
+    console.log(chalk_1.default.dim('   # List files in folder without processing'));
+    console.log('   claims-timeline folder /path/to/data --list-only');
+    console.log();
+    console.log(chalk_1.default.dim('   # Interactive mode (supports both files and folders)'));
     console.log('   claims-timeline interactive');
     console.log();
     console.log(chalk_1.default.dim('   # Validate JSON structure'));

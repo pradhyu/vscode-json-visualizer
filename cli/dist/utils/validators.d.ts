@@ -7,4 +7,5 @@ export declare function validateDimensions(width: string, height: string): {
     width: number;
     height: number;
 };
+export declare function validateFolder(folderPath: string): Promise<void>;
 //# sourceMappingURL=validators.d.ts.map

@@ -1,0 +1,676 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HtmlGenerator = void 0;
+class HtmlGenerator {
+    options;
+    constructor(options = {}) {
+        this.options = {
+            theme: options.theme || 'auto',
+            title: options.title || 'Medical Claims Timeline',
+            interactive: options.interactive !== false,
+            width: options.width || 1200,
+            height: options.height || 600
+        };
+    }
+    generate(timelineData) {
+        const serializedData = JSON.stringify({
+            ...timelineData,
+            claims: timelineData.claims.map(claim => ({
+                ...claim,
+                startDate: claim.startDate.toISOString(),
+                endDate: claim.endDate.toISOString()
+            })),
+            dateRange: {
+                start: timelineData.dateRange.start.toISOString(),
+                end: timelineData.dateRange.end.toISOString()
+            }
+        });
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${this.options.title}</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        ${this.generateCSS()}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>${this.options.title}</h1>
+            <div class="stats">
+                <span class="stat">
+                    <strong>${timelineData.metadata.totalClaims}</strong> Claims
+                </span>
+                <span class="stat">
+                    <strong>${timelineData.metadata.claimTypes.length}</strong> Types
+                </span>
+                <span class="stat">
+                    <strong>${this.formatDateRange(timelineData.dateRange)}</strong>
+                </span>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <button id="zoomIn" class="btn">Zoom In</button>
+                <button id="zoomOut" class="btn">Zoom Out</button>
+                <button id="resetZoom" class="btn">Reset</button>
+            </div>
+            <div class="control-group">
+                <label for="themeToggle">Theme:</label>
+                <select id="themeToggle">
+                    <option value="auto">Auto</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <div id="timeline"></div>
+            <div id="legend"></div>
+        </div>
+
+        <div id="tooltip" class="tooltip"></div>
+        
+        <div id="details-panel" class="details-panel">
+            <div class="details-header">
+                <h3>Claim Details</h3>
+                <button id="closeDetails" class="close-btn">&times;</button>
+            </div>
+            <div class="details-content"></div>
+        </div>
+    </div>
+
+    <script>
+        ${this.generateJavaScript(serializedData)}
+    </script>
+</body>
+</html>`;
+    }
+    generateCSS() {
+        return `
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --panel-bg: #f8f9fa;
+            --button-bg: #007bff;
+            --button-text: #ffffff;
+            --tooltip-bg: rgba(0, 0, 0, 0.8);
+            --tooltip-text: #ffffff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #e0e0e0;
+                --border-color: #404040;
+                --panel-bg: #2d2d2d;
+                --button-bg: #0d6efd;
+                --button-text: #ffffff;
+                --tooltip-bg: rgba(255, 255, 255, 0.9);
+                --tooltip-text: #000000;
+            }
+        }
+
+        [data-theme="light"] {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --panel-bg: #f8f9fa;
+            --button-bg: #007bff;
+            --button-text: #ffffff;
+            --tooltip-bg: rgba(0, 0, 0, 0.8);
+            --tooltip-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --border-color: #404040;
+            --panel-bg: #2d2d2d;
+            --button-bg: #0d6efd;
+            --button-text: #ffffff;
+            --tooltip-bg: rgba(255, 255, 255, 0.9);
+            --tooltip-text: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: ${this.options.width + 100}px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--panel-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        select {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        .timeline-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        #timeline {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            min-height: ${this.options.height}px;
+        }
+
+        #legend {
+            width: 200px;
+            padding: 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: fit-content;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: var(--tooltip-bg);
+            color: var(--tooltip-text);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .details-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            transition: right 0.3s ease;
+            z-index: 1001;
+            overflow-y: auto;
+        }
+
+        .details-panel.open {
+            right: 0;
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-color);
+        }
+
+        .details-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-color);
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .details-content {
+            padding: 20px;
+        }
+
+        .detail-group {
+            margin-bottom: 20px;
+        }
+
+        .detail-group h4 {
+            margin-bottom: 10px;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .detail-value {
+            color: var(--text-color);
+            text-align: right;
+            max-width: 200px;
+            word-break: break-word;
+        }
+
+        .axis {
+            font-size: 12px;
+        }
+
+        .axis text {
+            fill: var(--text-color);
+        }
+
+        .axis path,
+        .axis line {
+            stroke: var(--border-color);
+        }
+
+        .claim-rect {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .claim-rect:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .timeline-container {
+                flex-direction: column;
+            }
+
+            #legend {
+                width: 100%;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .details-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    `;
+    }
+    generateJavaScript(serializedData) {
+        return `
+        // Timeline data
+        const timelineData = ${serializedData};
+        
+        // Parse dates back from ISO strings
+        timelineData.claims.forEach(claim => {
+            claim.startDate = new Date(claim.startDate);
+            claim.endDate = new Date(claim.endDate);
+        });
+        timelineData.dateRange.start = new Date(timelineData.dateRange.start);
+        timelineData.dateRange.end = new Date(timelineData.dateRange.end);
+
+        // Theme management
+        function setTheme(theme) {
+            if (theme === 'auto') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('timeline-theme', theme);
+        }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('timeline-theme') || '${this.options.theme}';
+        setTheme(savedTheme);
+        document.getElementById('themeToggle').value = savedTheme;
+
+        document.getElementById('themeToggle').addEventListener('change', (e) => {
+            setTheme(e.target.value);
+        });
+
+        // Timeline dimensions and setup
+        const margin = { top: 20, right: 20, bottom: 60, left: 100 };
+        const width = ${this.options.width} - margin.left - margin.right;
+        const height = ${this.options.height} - margin.top - margin.bottom;
+
+        // Create SVG
+        const svg = d3.select('#timeline')
+            .append('svg')
+            .attr('width', width + margin.left + margin.right)
+            .attr('height', height + margin.top + margin.bottom);
+
+        const g = svg.append('g')
+            .attr('transform', \`translate(\${margin.left},\${margin.top})\`);
+
+        // Scales
+        const xScale = d3.scaleTime()
+            .domain([timelineData.dateRange.start, timelineData.dateRange.end])
+            .range([0, width]);
+
+        const yScale = d3.scaleBand()
+            .domain(timelineData.claims.map(d => d.id))
+            .range([0, height])
+            .padding(0.1);
+
+        // Zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 10])
+            .on('zoom', (event) => {
+                const { transform } = event;
+                
+                // Update x scale
+                const newXScale = transform.rescaleX(xScale);
+                
+                // Update axis
+                g.select('.x-axis').call(d3.axisBottom(newXScale));
+                
+                // Update rectangles
+                g.selectAll('.claim-rect')
+                    .attr('x', d => newXScale(d.startDate))
+                    .attr('width', d => Math.max(1, newXScale(d.endDate) - newXScale(d.startDate)));
+            });
+
+        svg.call(zoom);
+
+        // Create axes
+        const xAxis = d3.axisBottom(xScale)
+            .tickFormat(d3.timeFormat('%Y-%m-%d'));
+
+        const yAxis = d3.axisLeft(yScale);
+
+        g.append('g')
+            .attr('class', 'x-axis axis')
+            .attr('transform', \`translate(0,\${height})\`)
+            .call(xAxis);
+
+        g.append('g')
+            .attr('class', 'y-axis axis')
+            .call(yAxis);
+
+        // Create tooltip
+        const tooltip = d3.select('#tooltip');
+
+        // Create claims rectangles
+        const claims = g.selectAll('.claim-rect')
+            .data(timelineData.claims)
+            .enter()
+            .append('rect')
+            .attr('class', 'claim-rect')
+            .attr('x', d => xScale(d.startDate))
+            .attr('y', d => yScale(d.id))
+            .attr('width', d => Math.max(1, xScale(d.endDate) - xScale(d.startDate)))
+            .attr('height', yScale.bandwidth())
+            .attr('fill', d => d.color)
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1)
+            .on('mouseover', function(event, d) {
+                tooltip
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px')
+                    .html(\`
+                        <strong>\${d.displayName}</strong><br>
+                        <strong>Type:</strong> \${d.type}<br>
+                        <strong>Start:</strong> \${d.startDate.toLocaleDateString()}<br>
+                        <strong>End:</strong> \${d.endDate.toLocaleDateString()}<br>
+                        \${d.details.dosage ? \`<strong>Dosage:</strong> \${d.details.dosage}<br>\` : ''}
+                        \${d.details.prescriber ? \`<strong>Prescriber:</strong> \${d.details.prescriber}<br>\` : ''}
+                        \${d.details.provider ? \`<strong>Provider:</strong> \${d.details.provider}<br>\` : ''}
+                    \`)
+                    .classed('visible', true);
+            })
+            .on('mouseout', function() {
+                tooltip.classed('visible', false);
+            })
+            .on('click', function(event, d) {
+                showDetails(d);
+            });
+
+        // Control buttons
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            svg.transition().call(zoom.scaleBy, 1.5);
+        });
+
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            svg.transition().call(zoom.scaleBy, 1 / 1.5);
+        });
+
+        document.getElementById('resetZoom').addEventListener('click', () => {
+            svg.transition().call(zoom.transform, d3.zoomIdentity);
+        });
+
+        // Legend
+        const legend = d3.select('#legend');
+        legend.append('div')
+            .attr('class', 'legend-title')
+            .text('Claim Types');
+
+        const legendItems = legend.selectAll('.legend-item')
+            .data(timelineData.metadata.claimTypes)
+            .enter()
+            .append('div')
+            .attr('class', 'legend-item');
+
+        legendItems.append('div')
+            .attr('class', 'legend-color')
+            .style('background-color', type => {
+                const colors = {
+                    rxTba: '#FF6B6B',
+                    rxHistory: '#4ECDC4',
+                    medHistory: '#45B7D1'
+                };
+                return colors[type] || '#999999';
+            });
+
+        legendItems.append('span')
+            .text(d => {
+                const labels = {
+                    rxTba: 'Prescription (TBA)',
+                    rxHistory: 'Prescription History',
+                    medHistory: 'Medical History'
+                };
+                return labels[d] || d;
+            });
+
+        // Details panel
+        function showDetails(claim) {
+            const panel = document.getElementById('details-panel');
+            const content = panel.querySelector('.details-content');
+            
+            content.innerHTML = \`
+                <div class="detail-group">
+                    <h4>Basic Information</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">ID:</span>
+                        <span class="detail-value">\${claim.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Type:</span>
+                        <span class="detail-value">\${claim.type}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Display Name:</span>
+                        <span class="detail-value">\${claim.displayName}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Start Date:</span>
+                        <span class="detail-value">\${claim.startDate.toLocaleDateString()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">End Date:</span>
+                        <span class="detail-value">\${claim.endDate.toLocaleDateString()}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-group">
+                    <h4>Additional Details</h4>
+                    \${Object.entries(claim.details)
+                        .filter(([key, value]) => value && value !== 'N/A' && key !== 'id')
+                        .map(([key, value]) => \`
+                            <div class="detail-item">
+                                <span class="detail-label">\${key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                                <span class="detail-value">\${value}</span>
+                            </div>
+                        \`).join('')}
+                </div>
+            \`;
+            
+            panel.classList.add('open');
+        }
+
+        document.getElementById('closeDetails').addEventListener('click', () => {
+            document.getElementById('details-panel').classList.remove('open');
+        });
+
+        // Close details panel when clicking outside
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('details-panel');
+            if (panel.classList.contains('open') && !panel.contains(e.target) && !e.target.closest('.claim-rect')) {
+                panel.classList.remove('open');
+            }
+        });
+
+        console.log('Medical Claims Timeline loaded successfully');
+        console.log('Data:', timelineData);
+    `;
+    }
+    formatDateRange(dateRange) {
+        const start = dateRange.start.toLocaleDateString();
+        const end = dateRange.end.toLocaleDateString();
+        return `${start} - ${end}`;
+    }
+}
+exports.HtmlGenerator = HtmlGenerator;
+//# sourceMappingURL=HtmlGenerator.js.map

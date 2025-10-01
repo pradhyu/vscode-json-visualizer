@@ -1,0 +1,37 @@
+{
+  "rxTba": [
+    {
+      "id": "rx101",
+      "dos": "2024-03-01",
+      "dayssupply": 30,
+      "medication": "Aspirin 81mg",
+      "dosage": "81mg once daily",
+      "prescriber": "Dr. Williams"
+    },
+    {
+      "id": "rx102",
+      "dos": "2024-03-15",
+      "dayssupply": 60,
+      "medication": "Vitamin D3 1000IU",
+      "dosage": "1000IU daily",
+      "prescriber": "Dr. Williams"
+    }
+  ],
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med101",
+        "provider": "Family Practice",
+        "lines": [
+          {
+            "lineId": "line101",
+            "srvcStart": "2024-03-01",
+            "srvcEnd": "2024-03-01",
+            "serviceType": "Preventive Care",
+            "description": "Annual wellness visit"
+          }
+        ]
+      }
+    ]
+  }
+}

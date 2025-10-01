@@ -107,3 +107,54 @@ export function validateDimensions(width: string, height: string): { width: numb
 
   return { width: widthNum, height: heightNum };
 }
+
+export async function validateFolder(folderPath: string): Promise<void> {
+  // Check if folder exists
+  try {
+    await fs.promises.access(folderPath, fs.constants.F_OK);
+  } catch (error) {
+    throw new Error(`Folder not found: ${folderPath}`);
+  }
+
+  // Check if it's actually a directory
+  const stats = await fs.promises.stat(folderPath);
+  if (!stats.isDirectory()) {
+    throw new Error(`Path is not a directory: ${folderPath}`);
+  }
+
+  // Check if folder is readable
+  try {
+    await fs.promises.access(folderPath, fs.constants.R_OK);
+  } catch (error) {
+    throw new Error(`Folder is not readable: ${folderPath}`);
+  }
+
+  // Check if folder contains any JSON files
+  const hasJsonFiles = await checkForJsonFiles(folderPath);
+  if (!hasJsonFiles) {
+    console.warn(`Warning: No JSON files found in ${folderPath}`);
+  }
+}
+
+async function checkForJsonFiles(dirPath: string): Promise<boolean> {
+  try {
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
+        return true;
+      }
+      
+      if (entry.isDirectory()) {
+        const subPath = path.join(dirPath, entry.name);
+        if (await checkForJsonFiles(subPath)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    return false;
+  }
+}

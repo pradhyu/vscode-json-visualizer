@@ -1,0 +1,130 @@
+{
+  "rxTba": [
+    {
+      "id": "rx001",
+      "dos": "2024-01-15",
+      "dayssupply": 30,
+      "medication": "Lisinopril 10mg",
+      "dosage": "10mg once daily",
+      "prescriber": "Dr. Sarah Johnson",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "12345-678-90",
+      "quantity": "30 tablets",
+      "copay": "$10.00"
+    },
+    {
+      "id": "rx002", 
+      "dos": "2024-02-01",
+      "dayssupply": 90,
+      "medication": "Metformin 500mg",
+      "dosage": "500mg twice daily",
+      "prescriber": "Dr. Michael Chen",
+      "pharmacy": "Walgreens #5678",
+      "ndc": "98765-432-10",
+      "quantity": "180 tablets",
+      "copay": "$15.00"
+    },
+    {
+      "id": "rx003",
+      "dos": "2024-02-15",
+      "dayssupply": 30,
+      "medication": "Atorvastatin 20mg",
+      "dosage": "20mg once daily at bedtime",
+      "prescriber": "Dr. Sarah Johnson",
+      "pharmacy": "CVS Pharmacy #1234",
+      "ndc": "11111-222-33",
+      "quantity": "30 tablets",
+      "copay": "$25.00"
+    }
+  ],
+  "rxHistory": [
+    {
+      "id": "rxh001",
+      "dos": "2023-12-01",
+      "dayssupply": 30,
+      "medication": "Amoxicillin 500mg",
+      "dosage": "500mg three times daily",
+      "prescriber": "Dr. Emily Rodriguez",
+      "pharmacy": "Local Pharmacy",
+      "fillDate": "2023-12-01",
+      "refillsRemaining": "0"
+    },
+    {
+      "id": "rxh002",
+      "dos": "2023-11-15",
+      "dayssupply": 7,
+      "medication": "Prednisone 10mg",
+      "dosage": "10mg daily, tapering dose",
+      "prescriber": "Dr. Robert Kim",
+      "pharmacy": "Rite Aid #9876",
+      "fillDate": "2023-11-15",
+      "refillsRemaining": "0"
+    }
+  ],
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med001",
+        "provider": "General Hospital",
+        "lines": [
+          {
+            "lineId": "line001",
+            "srvcStart": "2024-01-08",
+            "srvcEnd": "2024-01-08",
+            "serviceType": "Office Visit",
+            "description": "Annual physical examination",
+            "procedureCode": "99395",
+            "chargedAmount": "$250.00",
+            "allowedAmount": "$200.00",
+            "paidAmount": "$160.00"
+          }
+        ]
+      },
+      {
+        "claimId": "med002",
+        "provider": "City Medical Center",
+        "lines": [
+          {
+            "lineId": "line002",
+            "srvcStart": "2024-01-22",
+            "srvcEnd": "2024-01-22",
+            "serviceType": "Laboratory",
+            "description": "Comprehensive metabolic panel",
+            "procedureCode": "80053",
+            "chargedAmount": "$85.00",
+            "allowedAmount": "$65.00",
+            "paidAmount": "$52.00"
+          },
+          {
+            "lineId": "line003",
+            "srvcStart": "2024-01-22",
+            "srvcEnd": "2024-01-22",
+            "serviceType": "Laboratory",
+            "description": "Lipid panel",
+            "procedureCode": "80061",
+            "chargedAmount": "$75.00",
+            "allowedAmount": "$60.00",
+            "paidAmount": "$48.00"
+          }
+        ]
+      },
+      {
+        "claimId": "med003",
+        "provider": "Cardiology Associates",
+        "lines": [
+          {
+            "lineId": "line004",
+            "srvcStart": "2024-02-10",
+            "srvcEnd": "2024-02-10",
+            "serviceType": "Specialist Visit",
+            "description": "Cardiology consultation",
+            "procedureCode": "99243",
+            "chargedAmount": "$350.00",
+            "allowedAmount": "$280.00",
+            "paidAmount": "$224.00"
+          }
+        ]
+      }
+    ]
+  }
+}
