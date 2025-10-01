@@ -25,6 +25,15 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "claimsTimelineExplorer",
+          "name": "Medical Claims Files",
+          "when": "claimsTimeline.explorerEnabled"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "claimsTimeline.viewTimeline",
@@ -45,9 +54,78 @@
         "command": "claimsTimeline.showDebugInfo",
         "title": "Show Debug Info",
         "category": "Claims Timeline"
+      },
+      {
+        "command": "claimsTimeline.selectFolder",
+        "title": "Select Folder with JSON Files",
+        "category": "Claims Timeline",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "claimsTimeline.refreshExplorer",
+        "title": "Refresh",
+        "category": "Claims Timeline",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "claimsTimeline.toggleSubfolders",
+        "title": "Toggle Subfolders",
+        "category": "Claims Timeline",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "claimsTimeline.viewTimelineFromExplorer",
+        "title": "View Timeline",
+        "category": "Claims Timeline"
+      },
+      {
+        "command": "claimsTimeline.validateFileFromExplorer",
+        "title": "Validate File",
+        "category": "Claims Timeline",
+        "icon": "$(check)"
+      },
+      {
+        "command": "claimsTimeline.showFileInfo",
+        "title": "Show File Info",
+        "category": "Claims Timeline",
+        "icon": "$(info)"
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "claimsTimeline.selectFolder",
+          "when": "view == claimsTimelineExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "claimsTimeline.refreshExplorer",
+          "when": "view == claimsTimelineExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "claimsTimeline.toggleSubfolders",
+          "when": "view == claimsTimelineExplorer",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "claimsTimeline.viewTimelineFromExplorer",
+          "when": "view == claimsTimelineExplorer && viewItem == jsonFile",
+          "group": "inline@1"
+        },
+        {
+          "command": "claimsTimeline.validateFileFromExplorer",
+          "when": "view == claimsTimelineExplorer && viewItem == jsonFile",
+          "group": "inline@2"
+        },
+        {
+          "command": "claimsTimeline.showFileInfo",
+          "when": "view == claimsTimelineExplorer && viewItem == jsonFile",
+          "group": "inline@3"
+        }
+      ],
       "explorer/context": [
         {
           "command": "claimsTimeline.viewTimeline",

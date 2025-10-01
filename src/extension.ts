@@ -2,9 +2,16 @@ import * as vscode from "vscode";
 import { DiagnosticTest } from "./diagnosticTest";
 import { HybridParser } from "./hybridParser";
 import { TimelineRenderer } from "./timelineRenderer";
+import { JsonFileExplorerProvider } from "./fileExplorer";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("Simple Medical Claims Timeline extension activated");
+
+  // Initialize the JSON File Explorer
+  const fileExplorer = new JsonFileExplorerProvider(context);
+  
+  // Enable the explorer view
+  vscode.commands.executeCommand('setContext', 'claimsTimeline.explorerEnabled', true);
 
   // Register comprehensive diagnostic command
   const diagnosticDisposable = vscode.commands.registerCommand(
