@@ -68,7 +68,7 @@ Define your own data structure using the powerful flexible configuration system:
 - 🎨 **Rich Display Options** - Control tooltips and detail panels
 - 🔄 **Multiple Claim Types** - Support unlimited claim categories
 
-See the [Flexible Configuration Guide](docs/FLEXIBLE_CONFIGURATION.md) for complete documentation.
+See the configuration examples below for complete documentation.
 
 #### Legacy Predefined Formats
 
@@ -163,7 +163,7 @@ Define custom data formats using the powerful flexible configuration system. Thi
 1. Open VSCode Settings (`File > Preferences > Settings`)
 2. Search for "Medical Claims Timeline"
 3. Click "Edit in settings.json" for `claimTypes`
-4. Use the [Flexible Configuration Guide](docs/FLEXIBLE_CONFIGURATION.md) and examples
+4. Use the configuration examples below
 
 **Example Configuration:**
 ```json

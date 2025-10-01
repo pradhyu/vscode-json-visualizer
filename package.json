@@ -3,6 +3,15 @@
   "displayName": "Medical Claims Timeline Viewer",
   "description": "VSCode extension to visualize medical claims data in an interactive timeline chart",
   "version": "0.0.1",
+  "publisher": "medical-claims-timeline",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/medical-claims-timeline/vscode-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/medical-claims-timeline/vscode-extension/issues"
+  },
+  "homepage": "https://github.com/medical-claims-timeline/vscode-extension#readme",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -199,14 +208,20 @@
                     "description": "Default value if field is missing"
                   }
                 },
-                "required": ["path"]
+                "required": [
+                  "path"
+                ]
               },
               "startDate": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["field", "calculation", "fixed"]
+                    "enum": [
+                      "field",
+                      "calculation",
+                      "fixed"
+                    ]
                   },
                   "field": {
                     "type": "string",
@@ -221,21 +236,38 @@
                       },
                       "operation": {
                         "type": "string",
-                        "enum": ["add", "subtract"]
+                        "enum": [
+                          "add",
+                          "subtract"
+                        ]
                       },
                       "value": {
                         "oneOf": [
-                          {"type": "number"},
-                          {"type": "string"}
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
                         ],
                         "description": "Value to add/subtract (number or field path)"
                       },
                       "unit": {
                         "type": "string",
-                        "enum": ["days", "weeks", "months", "years"]
+                        "enum": [
+                          "days",
+                          "weeks",
+                          "months",
+                          "years"
+                        ]
                       }
                     },
-                    "required": ["baseField", "operation", "value", "unit"]
+                    "required": [
+                      "baseField",
+                      "operation",
+                      "value",
+                      "unit"
+                    ]
                   },
                   "value": {
                     "type": "string",
@@ -249,14 +281,20 @@
                     "description": "Fallback date fields to try"
                   }
                 },
-                "required": ["type"]
+                "required": [
+                  "type"
+                ]
               },
               "endDate": {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["field", "calculation", "fixed"]
+                    "enum": [
+                      "field",
+                      "calculation",
+                      "fixed"
+                    ]
                   },
                   "field": {
                     "type": "string"
@@ -264,53 +302,143 @@
                   "calculation": {
                     "type": "object",
                     "properties": {
-                      "baseField": {"type": "string"},
-                      "operation": {"type": "string", "enum": ["add", "subtract"]},
-                      "value": {"oneOf": [{"type": "number"}, {"type": "string"}]},
-                      "unit": {"type": "string", "enum": ["days", "weeks", "months", "years"]}
+                      "baseField": {
+                        "type": "string"
+                      },
+                      "operation": {
+                        "type": "string",
+                        "enum": [
+                          "add",
+                          "subtract"
+                        ]
+                      },
+                      "value": {
+                        "oneOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "days",
+                          "weeks",
+                          "months",
+                          "years"
+                        ]
+                      }
                     },
-                    "required": ["baseField", "operation", "value", "unit"]
+                    "required": [
+                      "baseField",
+                      "operation",
+                      "value",
+                      "unit"
+                    ]
                   },
-                  "value": {"type": "string"},
-                  "fallbacks": {"type": "array", "items": {"type": "string"}}
+                  "value": {
+                    "type": "string"
+                  },
+                  "fallbacks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
                 },
-                "required": ["type"]
+                "required": [
+                  "type"
+                ]
               },
               "displayName": {
                 "type": "object",
                 "properties": {
-                  "path": {"type": "string"},
-                  "defaultValue": {"type": "string"}
+                  "path": {
+                    "type": "string"
+                  },
+                  "defaultValue": {
+                    "type": "string"
+                  }
                 },
-                "required": ["path"]
+                "required": [
+                  "path"
+                ]
               },
               "displayFields": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "label": {"type": "string"},
-                    "path": {"type": "string"},
-                    "format": {"type": "string", "enum": ["text", "date", "currency", "number"]},
-                    "showInTooltip": {"type": "boolean"},
-                    "showInDetails": {"type": "boolean"}
+                    "label": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "format": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "date",
+                        "currency",
+                        "number"
+                      ]
+                    },
+                    "showInTooltip": {
+                      "type": "boolean"
+                    },
+                    "showInDetails": {
+                      "type": "boolean"
+                    }
                   },
-                  "required": ["label", "path"]
+                  "required": [
+                    "label",
+                    "path"
+                  ]
                 }
               }
             },
-            "required": ["name", "arrayPath", "color", "idField", "startDate", "endDate", "displayName"]
+            "required": [
+              "name",
+              "arrayPath",
+              "color",
+              "idField",
+              "startDate",
+              "endDate",
+              "displayName"
+            ]
           }
         },
         "claimsTimeline.globalDateFormat": {
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Global date format for parsing dates",
-          "enum": ["YYYY-MM-DD", "MM/DD/YYYY", "DD-MM-YYYY", "YYYY/MM/DD", "DD/MM/YYYY", "MM-DD-YYYY"]
+          "enum": [
+            "YYYY-MM-DD",
+            "MM/DD/YYYY",
+            "DD-MM-YYYY",
+            "YYYY/MM/DD",
+            "DD/MM/YYYY",
+            "MM-DD-YYYY"
+          ]
         },
         "claimsTimeline.defaultColors": {
           "type": "array",
-          "default": ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9"],
+          "default": [
+            "#FF6B6B",
+            "#4ECDC4",
+            "#45B7D1",
+            "#96CEB4",
+            "#FFEAA7",
+            "#DDA0DD",
+            "#98D8C8",
+            "#F7DC6F",
+            "#BB8FCE",
+            "#85C1E9"
+          ],
           "description": "Default color palette for claim types",
           "items": {
             "type": "string",
@@ -328,13 +456,14 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
     "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@vitest/ui": "^1.0.0",
     "typescript": "^4.9.4",
-    "vitest": "^1.0.0",
-    "@vitest/ui": "^1.0.0"
+    "vitest": "^1.0.0"
   },
   "dependencies": {
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "vsce": "^2.15.0"
   }
 }
