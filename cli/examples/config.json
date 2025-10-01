@@ -1,0 +1,11 @@
+{
+  "rxTbaPath": "rxTba",
+  "rxHistoryPath": "rxHistory",
+  "medHistoryPath": "medHistory",
+  "dateFormat": "YYYY-MM-DD",
+  "colors": {
+    "rxTba": "#FF6B6B",
+    "rxHistory": "#4ECDC4",
+    "medHistory": "#45B7D1"
+  }
+}
