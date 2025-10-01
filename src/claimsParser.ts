@@ -1120,16 +1120,9 @@ export class ClaimsParser {
      * Validate that a date string looks reasonable before parsing
      */
     private isValidDateString(dateStr: string): boolean {
-        // Check for reasonable date patterns
-        const datePatterns = [
-            /^\d{4}-\d{2}-\d{2}$/,           // YYYY-MM-DD
-            /^\d{2}\/\d{2}\/\d{4}$/,         // MM/DD/YYYY
-            /^\d{2}-\d{2}-\d{4}$/,           // MM-DD-YYYY or DD-MM-YYYY
-            /^\d{4}\/\d{2}\/\d{2}$/,         // YYYY/MM/DD
-            /^\d{2}\/\d{2}\/\d{4}$/          // DD/MM/YYYY
-        ];
-
-        return datePatterns.some(pattern => pattern.test(dateStr));
+        // Only check for ISO date pattern (YYYY-MM-DD) since this method is used for ISO parsing
+        const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+        return isoPattern.test(dateStr);
     }
 
     /**
