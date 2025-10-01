@@ -1,0 +1,27 @@
+{
+  "rxHistory": [
+    {
+      "id": "rxh001",
+      "dos": "2024-02-01",
+      "dayssupply": 7,
+      "medication": "Test Medication 2",
+      "dosage": "5mg twice daily"
+    }
+  ],
+  "medHistory": {
+    "claims": [
+      {
+        "claimId": "med001",
+        "provider": "Test Hospital",
+        "lines": [
+          {
+            "lineId": "line001",
+            "srvcStart": "2024-02-01",
+            "srvcEnd": "2024-02-01",
+            "serviceType": "Office Visit"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -19,6 +19,7 @@
     "node_modules",
     ".vscode-test",
     "vitest.config.ts",
-    "debug-user-test.ts"
+    "debug-user-test.ts",
+    "cli/**/*"
   ]
 }
