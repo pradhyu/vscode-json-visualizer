@@ -81,7 +81,7 @@ class TestFixer {
                 fix.apply();
                 console.log('✓ Fix applied successfully\n');
             } catch (error) {
-                console.log(`✗ Fix failed: ${error.message}\n`);
+                console.log(`✗ Fix failed: ${(error as Error).message}\n`);
             }
         }
         

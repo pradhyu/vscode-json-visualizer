@@ -62,19 +62,19 @@ describe('Advanced Features Summary - Task 9 Verification', () => {
             arrayPath: 'patient.prescriptions',
             color: '#FF6B6B',
             idField: { path: 'rxNumber', defaultValue: 'auto-generated' },
-            startDate: { type: 'field', field: 'fillDate' },
+            startDate: { type: 'field' as const, field: 'fillDate' },
             endDate: {
-              type: 'calculation',
+              type: 'calculation' as const,
               calculation: {
                 baseField: 'fillDate',
-                operation: 'add',
+                operation: 'add' as const,
                 value: 'daysSupply',
-                unit: 'days'
+                unit: 'days' as const
               }
             },
             displayName: { path: 'drugName', defaultValue: 'Medication' },
             displayFields: [
-              { label: 'Drug', path: 'drugName', format: 'text', showInTooltip: true, showInDetails: true }
+              { label: 'Drug', path: 'drugName', format: 'text' as const, showInTooltip: true, showInDetails: true }
             ]
           }
         ],
@@ -122,8 +122,8 @@ describe('Advanced Features Summary - Task 9 Verification', () => {
           arrayPath: 'data',
           color: 'invalid-color', // Invalid: not hex color
           idField: { path: '' }, // Invalid: empty path
-          startDate: { type: 'field', field: '' }, // Invalid: empty field
-          endDate: { type: 'calculation' }, // Invalid: missing calculation
+          startDate: { type: 'field' as const, field: '' }, // Invalid: empty field
+          endDate: { type: 'calculation' as const }, // Invalid: missing calculation
           displayName: { path: '' }, // Invalid: empty path
           displayFields: []
         }
@@ -141,8 +141,8 @@ describe('Advanced Features Summary - Task 9 Verification', () => {
             arrayPath: 'nonexistent.path',
             color: '#FF6B6B',
             idField: { path: 'id' },
-            startDate: { type: 'field', field: 'date' },
-            endDate: { type: 'field', field: 'date' },
+            startDate: { type: 'field' as const, field: 'date' },
+            endDate: { type: 'field' as const, field: 'date' },
             displayName: { path: 'name' },
             displayFields: []
           }
@@ -196,8 +196,8 @@ describe('Advanced Features Summary - Task 9 Verification', () => {
               arrayPath: 'custom.data',
               color: '#FF6B6B',
               idField: { path: 'customId' },
-              startDate: { type: 'field', field: 'startDate' },
-              endDate: { type: 'field', field: 'endDate' },
+              startDate: { type: 'field' as const, field: 'startDate' },
+              endDate: { type: 'field' as const, field: 'endDate' },
               displayName: { path: 'title' },
               displayFields: []
             }
@@ -250,8 +250,8 @@ describe('Advanced Features Summary - Task 9 Verification', () => {
             arrayPath: 'data',
             color: '#FF6B6B',
             idField: { path: 'id' },
-            startDate: { type: 'field', field: 'date' },
-            endDate: { type: 'field', field: 'date' },
+            startDate: { type: 'field' as const, field: 'date' },
+            endDate: { type: 'field' as const, field: 'date' },
             displayName: { path: 'name' },
             displayFields: []
           }

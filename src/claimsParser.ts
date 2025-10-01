@@ -744,6 +744,7 @@ export class ClaimsParser {
                     startDate,
                     endDate,
                     details: {
+                        ...claim, // Include original data first
                         medication: claim.medication || displayName,
                         dosage: claim.dosage || 'N/A',
                         daysSupply: daysSupply,
@@ -753,8 +754,7 @@ export class ClaimsParser {
                         copay: claim.copay || 'N/A',
                         ndc: claim.ndc || 'N/A',
                         fillDate: claim.fillDate || 'N/A',
-                        refillsRemaining: claim.refillsRemaining || 'N/A',
-                        ...claim // Include original data as well
+                        refillsRemaining: claim.refillsRemaining || 'N/A'
                     },
                     displayName,
                     color
@@ -1247,11 +1247,10 @@ export class ClaimsParser {
             return null;
         }
 
-        const date = new Date(Date.UTC(year, month, day));
+        const date = new Date(year, month, day);
         
         // Validate the date is correct (handles invalid dates like Feb 30)
-        const utcDate = new Date(date.getTime());
-        if (utcDate.getUTCFullYear() !== year || utcDate.getUTCMonth() !== month || utcDate.getUTCDate() !== day) {
+        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
             return null;
         }
 

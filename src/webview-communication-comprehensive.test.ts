@@ -253,9 +253,9 @@ describe('Comprehensive Webview Communication Tests - Requirement 2.4', () => {
                     expect(payload.metadata.claimTypes).toEqual(['rxTba', 'rxHistory', 'medHistory']);
                     
                     // Verify each claim type is properly serialized
-                    const rxTbaClaim = payload.claims.find(c => c.type === 'rxTba');
-                    const rxHistoryClaim = payload.claims.find(c => c.type === 'rxHistory');
-                    const medHistoryClaim = payload.claims.find(c => c.type === 'medHistory');
+                    const rxTbaClaim = payload.claims.find((c: any) => c.type === 'rxTba');
+                    const rxHistoryClaim = payload.claims.find((c: any) => c.type === 'rxHistory');
+                    const medHistoryClaim = payload.claims.find((c: any) => c.type === 'medHistory');
                     
                     expect(rxTbaClaim).toBeDefined();
                     expect(rxHistoryClaim).toBeDefined();

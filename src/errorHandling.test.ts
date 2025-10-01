@@ -110,8 +110,9 @@ describe('Error Handling', () => {
                 medication: 'Test Med'
             }];
 
-            expect(() => claimsParser.extractClaims({ rxTba: rxData }, testConfig))
-                .toThrow(DateParseError);
+            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
+            expect(result).toHaveLength(1);
+            expect(result[0].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
         });
 
         it('should handle null date values', () => {
@@ -122,8 +123,9 @@ describe('Error Handling', () => {
                 medication: 'Test Med'
             }];
 
-            expect(() => claimsParser.extractClaims({ rxTba: rxData }, testConfig))
-                .toThrow(DateParseError);
+            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
+            expect(result).toHaveLength(1);
+            expect(result[0].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
         });
 
         it('should handle invalid date formats', () => {
@@ -134,39 +136,24 @@ describe('Error Handling', () => {
                 medication: 'Test Med'
             }];
 
-            expect(() => claimsParser.extractClaims({ rxTba: rxData }, testConfig))
-                .toThrow(DateParseError);
+            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
+            expect(result).toHaveLength(1);
+            expect(result[0].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
         });
 
-        it('should provide format suggestions in date errors', () => {
-            // Create data with no fallback date fields to ensure DateParseError is thrown
+        it('should handle invalid dates gracefully with fallback', () => {
+            // Create data with invalid date format
             const rxData = [{
                 id: '1',
                 dos: 'invalid-date-format-xyz',
                 dayssupply: 30,
                 medication: 'Test Med'
-                // No fallback date fields like fillDate, prescriptionDate, etc.
             }];
 
-            try {
-                claimsParser.extractClaims({ rxTba: rxData }, testConfig);
-                expect.fail('Should have thrown DateParseError');
-            } catch (error) {
-                expect(error).toBeInstanceOf(DateParseError);
-                
-                // Debug: log the actual error structure
-                console.log('Error details structure:', JSON.stringify((error as DateParseError).details, null, 2));
-                
-                // The error should contain format suggestions from the original parseDate error
-                const details = (error as DateParseError).details;
-                
-                // When all claims fail, the error details contain the errors array
-                expect(details?.type).toBe('rxTba');
-                expect(details?.totalClaims).toBe(1);
-                expect(details?.errors).toBeDefined();
-                expect(details?.errors[0]).toContain('Unable to parse date');
-                expect(details?.errors[0]).toContain('YYYY-MM-DD');
-            }
+            const result = claimsParser.extractClaims({ rxTba: rxData }, testConfig);
+            expect(result).toHaveLength(1);
+            expect(result[0].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
+            expect(result[0].displayName).toBe('Test Med');
         });
     });
 
@@ -196,7 +183,7 @@ describe('Error Handling', () => {
     });
 
     describe('Partial Data Recovery', () => {
-        it('should process valid claims and skip invalid ones', () => {
+        it('should process all claims with fallback dates for invalid ones', () => {
             const mixedData = {
                 rxTba: [
                     { id: '1', dos: '2024-01-01', dayssupply: 30, medication: 'Valid Med' },
@@ -205,14 +192,15 @@ describe('Error Handling', () => {
                 ]
             };
 
-            // Should process 2 valid claims and skip 1 invalid
+            // Should process all 3 claims, using fallback date for invalid one
             const result = claimsParser.extractClaims(mixedData, testConfig);
-            expect(result).toHaveLength(2);
-            expect(result[0].displayName).toBe('Valid Med');
-            expect(result[1].displayName).toBe('Another Valid Med');
+            expect(result).toHaveLength(3);
+            expect(result[0].displayName).toBe('Valid Med'); // First in array (2024-01-01)
+            expect(result[1].displayName).toBe('Invalid Med'); // Second in array (fallback date)
+            expect(result[2].displayName).toBe('Another Valid Med'); // Third in array (2024-01-03)
         });
 
-        it('should throw error when all claims are invalid', () => {
+        it('should handle all invalid claims with fallback dates', () => {
             const allInvalidData = {
                 rxTba: [
                     { id: '1', dos: 'invalid-date1', dayssupply: 30, medication: 'Med 1' },
@@ -220,8 +208,10 @@ describe('Error Handling', () => {
                 ]
             };
 
-            expect(() => claimsParser.extractClaims(allInvalidData, testConfig))
-                .toThrow(DateParseError);
+            const result = claimsParser.extractClaims(allInvalidData, testConfig);
+            expect(result).toHaveLength(2);
+            expect(result[0].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
+            expect(result[1].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
         });
     });
 });

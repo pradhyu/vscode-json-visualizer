@@ -55,11 +55,11 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/nonexistent/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.message).toContain('File not found');
-                expect(e.filePath).toBe('/nonexistent/file.json');
-                expect(e.code).toBe('ENOENT');
-                expect(e.recoverySuggestions).toContain('Check if the file path is correct');
-                expect(e.recoverySuggestions).toContain('Verify the file exists');
+                expect((e as any).message).toContain('File not found');
+                expect((e as any).filePath).toBe('/nonexistent/file.json');
+                expect((e as any).code).toBe('ENOENT');
+                expect((e as any).recoverySuggestions).toContain('Check if the file path is correct');
+                expect((e as any).recoverySuggestions).toContain('Verify the file exists');
             }
         });
 
@@ -72,9 +72,9 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/restricted/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.code).toBe('EACCES');
-                expect(e.recoverySuggestions).toContain('Check file permissions');
-                expect(e.recoverySuggestions).toContain('Run with appropriate privileges');
+                expect((e as any).code).toBe('EACCES');
+                expect((e as any).recoverySuggestions).toContain('Check file permissions');
+                expect((e as any).recoverySuggestions).toContain('Run with appropriate privileges');
             }
         });
 
@@ -87,8 +87,8 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/full-disk/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.code).toBe('ENOSPC');
-                expect(e.recoverySuggestions).toContain('Free up disk space');
+                expect((e as any).code).toBe('ENOSPC');
+                expect((e as any).recoverySuggestions).toContain('Free up disk space');
             }
         });
 
@@ -101,8 +101,8 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('//network/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.code).toBe('ENETUNREACH');
-                expect(e.recoverySuggestions).toContain('Check network connection');
+                expect((e as any).code).toBe('ENETUNREACH');
+                expect((e as any).recoverySuggestions).toContain('Check network connection');
             }
         });
 
@@ -113,8 +113,8 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/empty/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(ValidationError);
-                expect(e.message).toContain('Empty file');
-                expect(e.recoverySuggestions).toContain('Ensure the file contains valid JSON data');
+                expect((e as any).message).toContain('Empty file');
+                expect((e as any).recoverySuggestions).toContain('Ensure the file contains valid JSON data');
             }
         });
 
@@ -128,9 +128,9 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/huge/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.code).toBe('ENOMEM');
-                expect(e.recoverySuggestions).toContain('Try with a smaller file');
-                expect(e.recoverySuggestions).toContain('Increase available memory');
+                expect((e as any).code).toBe('ENOMEM');
+                expect((e as any).recoverySuggestions).toContain('Try with a smaller file');
+                expect((e as any).recoverySuggestions).toContain('Increase available memory');
             }
         });
     });
@@ -156,9 +156,9 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                     throw new Error(`Expected error for ${testCase.description}`);
                 } catch (e) {
                     expect(e).toBeInstanceOf(ValidationError);
-                    expect(e.message).toContain('Invalid JSON');
-                    expect(e.filePath).toBe('/test/malformed.json');
-                    expect(e.recoverySuggestions).toContain('Check JSON syntax');
+                    expect((e as any).message).toContain('Invalid JSON');
+                    expect((e as any).filePath).toBe('/test/malformed.json');
+                    expect((e as any).recoverySuggestions).toContain('Check JSON syntax');
                 }
             }
         });
@@ -170,10 +170,10 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/test/incomplete.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(ValidationError);
-                expect(e.message).toContain('Invalid JSON');
-                expect(e.filePath).toBe('/test/incomplete.json');
-                expect(e.originalError).toBeDefined();
-                expect(e.originalError.message).toBeTruthy();
+                expect((e as any).message).toContain('Invalid JSON');
+                expect((e as any).filePath).toBe('/test/incomplete.json');
+                expect((e as any).originalError).toBeDefined();
+                expect((e as any).originalError.message).toBeTruthy();
             }
         });
 
@@ -185,8 +185,8 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/test/unicode.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(ValidationError);
-                expect(e.message).toContain('Invalid JSON');
-                expect(e.recoverySuggestions).toContain('Check for invalid Unicode sequences');
+                expect((e as any).message).toContain('Invalid JSON');
+                expect((e as any).recoverySuggestions).toContain('Check for invalid Unicode sequences');
             }
         });
 
@@ -214,11 +214,11 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                     throw new Error(`Expected error for ${testCase.description}`);
                 } catch (e) {
                     expect(e).toBeInstanceOf(StructureValidationError);
-                    expect(e.message).toContain('does not contain valid medical claims data');
-                    expect(e.expectedStructure).toBeDefined();
-                    expect(e.expectedStructure).toContain('rxTba');
-                    expect(e.expectedStructure).toContain('rxHistory');
-                    expect(e.expectedStructure).toContain('medHistory');
+                    expect((e as any).message).toContain('does not contain valid medical claims data');
+                    expect((e as any).expectedStructure).toBeDefined();
+                    expect((e as any).expectedStructure).toContain('rxTba');
+                    expect((e as any).expectedStructure).toContain('rxHistory');
+                    expect((e as any).expectedStructure).toContain('medHistory');
                 }
             }
         });
@@ -230,11 +230,11 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/test/empty-object.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(StructureValidationError);
-                expect(e.expectedStructure).toContain('rxTba: array of prescription claims');
-                expect(e.expectedStructure).toContain('rxHistory: array of prescription history');
-                expect(e.expectedStructure).toContain('medHistory: object with claims array');
-                expect(e.recoverySuggestions).toContain('Ensure your JSON contains medical claims data');
-                expect(e.recoverySuggestions).toContain('Check the sample files for correct structure');
+                expect((e as any).expectedStructure).toContain('rxTba: array of prescription claims');
+                expect((e as any).expectedStructure).toContain('rxHistory: array of prescription history');
+                expect((e as any).expectedStructure).toContain('medHistory: object with claims array');
+                expect((e as any).recoverySuggestions).toContain('Ensure your JSON contains medical claims data');
+                expect((e as any).recoverySuggestions).toContain('Check the sample files for correct structure');
             }
         });
 
@@ -273,7 +273,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/test/invalid-nested.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(StructureValidationError);
-                expect(e.message).toContain('medHistory claims must have lines array');
+                expect((e as any).message).toContain('medHistory claims must have lines array');
             }
         });
     });
@@ -298,11 +298,11 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await parser.parseFile('/test/context.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(DateParseError);
-                expect(e.context).toBeDefined();
-                expect(e.context.claimType).toBe('rxTba');
-                expect(e.context.claimIndex).toBe(1); // Second claim (index 1)
-                expect(e.context.fieldName).toBe('dos');
-                expect(e.context.fieldValue).toBe('bad-date');
+                expect((e as any).context).toBeDefined();
+                expect((e as any).context.claimType).toBe('rxTba');
+                expect((e as any).context.claimIndex).toBe(1); // Second claim (index 1)
+                expect((e as any).context.fieldName).toBe('dos');
+                expect((e as any).context.fieldValue).toBe('bad-date');
             }
         });
 
@@ -325,7 +325,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                     await parser.parseFile('/test/timezone.json');
                 } catch (e) {
                     expect(e).toBeInstanceOf(DateParseError);
-                    expect(e.recoverySuggestions).toContain('Check date and time values');
+                    expect((e as any).recoverySuggestions).toContain('Check date and time values');
                 }
             }
         });
@@ -384,8 +384,8 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 await hybridParser.parseFile('/test/invalid.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(Error);
-                expect(e.message).toBeDefined();
-                expect(e.message).toContain('parsing strategies failed');
+                expect((e as any).message).toBeDefined();
+                expect((e as any).message).toContain('parsing strategies failed');
             }
         });
 
@@ -406,7 +406,7 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 expect(result).toBeDefined();
             } catch (e) {
                 // If all strategies fail, should provide comprehensive error
-                expect(e.message).toContain('All parsing strategies failed');
+                expect((e as any).message).toContain('All parsing strategies failed');
             } finally {
                 // Restore original method
                 ClaimsParser.prototype.parseFile = originalComplexParse;
@@ -491,8 +491,8 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
                 });
             } catch (e) {
                 // If it fails, should provide context about which entry failed
-                if (e.context) {
-                    expect(e.context.claimIndex).toBe(1); // Second entry (index 1)
+                if ((e as any).context) {
+                    expect((e as any).context.claimIndex).toBe(1); // Second entry (index 1)
                 }
             }
         });
@@ -540,9 +540,9 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
             try {
                 await parser.parseFile('/test/stack.json');
             } catch (e) {
-                expect(e.originalError).toBe(originalError);
-                expect(e.stack).toContain('Original stack trace');
-                expect(e.stack).toContain('test location');
+                expect((e as any).originalError).toBe(originalError);
+                expect((e as any).stack).toContain('Original stack trace');
+                expect((e as any).stack).toContain('test location');
             }
         });
 
@@ -584,10 +584,10 @@ describe('Error Handling and Fallback Mechanisms - Requirements 2.1 & 2.2', () =
             try {
                 await parser.parseFile('/test/complex-error.json');
             } catch (e) {
-                expect(e.message).toBeDefined();
-                expect(e.filePath).toBe('/test/complex-error.json');
-                expect(e.recoverySuggestions).toBeDefined();
-                expect(e.recoverySuggestions.length).toBeGreaterThan(0);
+                expect((e as any).message).toBeDefined();
+                expect((e as any).filePath).toBe('/test/complex-error.json');
+                expect((e as any).recoverySuggestions).toBeDefined();
+                expect((e as any).recoverySuggestions.length).toBeGreaterThan(0);
             }
         });
     });

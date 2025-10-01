@@ -1,262 +1,275 @@
-import * as vscode from 'vscode';
-import { TimelineData, ClaimItem } from './types';
+import * as vscode from "vscode";
+import { TimelineData, ClaimItem } from "./types";
 
 /**
  * Message types for communication between extension and webview
  */
 export interface WebviewMessage {
-    command: 'zoom' | 'pan' | 'select' | 'configure' | 'ready' | 'error';
-    payload?: any;
+  command: "zoom" | "pan" | "select" | "configure" | "ready" | "error";
+  payload?: any;
 }
 
 /**
  * TimelineRenderer manages webview panels and coordinates timeline display
  */
 export class TimelineRenderer {
-    private static readonly viewType = 'medicalClaimsTimeline';
-    private panel: vscode.WebviewPanel | undefined;
-    private context: vscode.ExtensionContext;
-    private currentData: TimelineData | undefined;
+  private static readonly viewType = "medicalClaimsTimeline";
+  private panel: vscode.WebviewPanel | undefined;
+  private context: vscode.ExtensionContext;
+  private currentData: TimelineData | undefined;
 
-    constructor(context: vscode.ExtensionContext) {
-        this.context = context;
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+  }
+
+  /**
+   * Create timeline with data (main entry point)
+   */
+  public async createTimeline(data: TimelineData): Promise<void> {
+    console.log(
+      "=== HYBRID PARSER: TimelineRenderer.createTimeline started ==="
+    );
+    this.createPanel(data);
+  }
+
+  /**
+   * Create and show timeline webview panel
+   */
+  public createPanel(data: TimelineData): vscode.WebviewPanel | null {
+    console.log("=== DIAGNOSTIC: TimelineRenderer.createPanel started ===");
+
+    // If panel already exists, reveal it and update data
+    if (this.panel) {
+      this.panel.reveal(vscode.ViewColumn.One);
+      this.updateData(data);
+      return this.panel;
     }
 
-    /**
-     * Create timeline with data (main entry point)
-     */
-    public async createTimeline(data: TimelineData): Promise<void> {
-        console.log('=== HYBRID PARSER: TimelineRenderer.createTimeline started ===');
-        this.createPanel(data);
-    }
-
-    /**
-     * Create and show timeline webview panel
-     */
-    public createPanel(data: TimelineData): vscode.WebviewPanel | null {
-        console.log('=== DIAGNOSTIC: TimelineRenderer.createPanel started ===');
-        
-        // If panel already exists, reveal it and update data
-        if (this.panel) {
-            this.panel.reveal(vscode.ViewColumn.One);
-            this.updateData(data);
-            return this.panel;
+    try {
+      // Create new webview panel
+      this.panel = vscode.window.createWebviewPanel(
+        TimelineRenderer.viewType,
+        "Medical Claims Timeline",
+        vscode.ViewColumn.One,
+        {
+          enableScripts: true,
+          retainContextWhenHidden: true,
+          localResourceRoots: [
+            vscode.Uri.joinPath(this.context.extensionUri, "webview"),
+          ],
         }
-        
-        try {
-            // Create new webview panel
-            this.panel = vscode.window.createWebviewPanel(
-                TimelineRenderer.viewType,
-                'Medical Claims Timeline',
-                vscode.ViewColumn.One,
-                {
-                    enableScripts: true,
-                    retainContextWhenHidden: true,
-                    localResourceRoots: [
-                        vscode.Uri.joinPath(this.context.extensionUri, 'webview')
-                    ]
-                }
-            );
+      );
 
-            // Handle null panel creation
-            if (!this.panel) {
-                console.error('Failed to create webview panel');
-                return null;
-            }
-            
-            // Set webview HTML content
-            this.panel.webview.html = this.getWebviewContent();
-            
-            // Handle messages from webview
-            this.panel.webview.onDidReceiveMessage(
-                (message: WebviewMessage) => {
-                    this.handleMessage(message);
-                },
-                undefined,
-                this.context.subscriptions
-            );
+      // Handle null panel creation
+      if (!this.panel) {
+        console.error("Failed to create webview panel");
+        return null;
+      }
 
-            // Handle panel disposal
-            this.panel.onDidDispose(
-                () => {
-                    this.panel = undefined;
-                },
-                null,
-                this.context.subscriptions
-            );
-            
-            // Store current data and send to webview
-            this.currentData = data;
-            
-            // Send data immediately without waiting for ready message
-            setTimeout(() => {
-                if (this.panel && this.currentData) {
-                    try {
-                        const serializedData = this.serializeTimelineData(this.currentData);
-                        this.panel.webview.postMessage({
-                            command: 'updateData',
-                            payload: serializedData
-                        });
-                    } catch (error) {
-                        console.error('Error sending data to webview:', error);
-                    }
-                }
-            }, 50);
+      // Set webview HTML content
+      this.panel.webview.html = this.getWebviewContent();
 
-            return this.panel;
-        } catch (error) {
-            console.error('Error creating webview panel:', error);
-            return null;
+      // Handle messages from webview
+      this.panel.webview.onDidReceiveMessage(
+        (message: WebviewMessage) => {
+          this.handleMessage(message);
+        },
+        undefined,
+        this.context.subscriptions
+      );
+
+      // Handle panel disposal
+      this.panel.onDidDispose(
+        () => {
+          this.panel = undefined;
+        },
+        null,
+        this.context.subscriptions
+      );
+
+      // Store current data and send to webview
+      this.currentData = data;
+
+      // Send data immediately without waiting for ready message
+      setTimeout(() => {
+        if (this.panel && this.currentData) {
+          try {
+            const serializedData = this.serializeTimelineData(this.currentData);
+            this.panel.webview.postMessage({
+              command: "updateData",
+              payload: serializedData,
+            });
+          } catch (error) {
+            console.error("Error sending data to webview:", error);
+          }
         }
+      }, 50);
+
+      return this.panel;
+    } catch (error) {
+      console.error("Error creating webview panel:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Update timeline data in existing webview
+   */
+  public updateData(data: TimelineData): void {
+    this.currentData = data;
+
+    if (this.panel) {
+      try {
+        const serializedData = this.serializeTimelineData(data);
+        this.panel.webview.postMessage({
+          command: "updateData",
+          payload: serializedData,
+        });
+      } catch (error) {
+        console.error("Error updating webview data:", error);
+      }
+    } else if (data) {
+      this.createPanel(data);
+    }
+  }
+
+  /**
+   * Handle messages from webview
+   */
+  private handleMessage(message: WebviewMessage): void {
+    try {
+      // Handle null or malformed messages
+      if (!message || typeof message !== "object") {
+        console.warn("Received invalid message:", message);
+        return;
+      }
+
+      switch (message.command) {
+        case "ready":
+          if (this.currentData && this.panel) {
+            const serializedData = this.serializeTimelineData(this.currentData);
+            this.panel.webview.postMessage({
+              command: "updateData",
+              payload: serializedData,
+            });
+          }
+          break;
+
+        case "select":
+          this.handleClaimSelection(message.payload);
+          break;
+
+        case "error":
+          this.handleWebviewError(message.payload);
+          break;
+
+        default:
+          console.warn("Unknown message command:", message.command);
+          break;
+      }
+    } catch (error) {
+      console.error("Error handling webview message:", error);
+    }
+  }
+
+  /**
+   * Handle claim selection from timeline
+   */
+  private handleClaimSelection(claimId: string): void {
+    if (!this.currentData) {
+      return;
     }
 
-    /**
-     * Update timeline data in existing webview
-     */
-    public updateData(data: TimelineData): void {
-        this.currentData = data;
+    const selectedClaim = this.currentData.claims.find(
+      (claim) => claim.id === claimId
+    );
+    if (selectedClaim) {
+      const details = this.formatClaimDetails(selectedClaim);
+      vscode.window.showInformationMessage(
+        "Selected " +
+          selectedClaim.type +
+          " claim: " +
+          selectedClaim.displayName,
+        { modal: false, detail: details }
+      );
+    } else {
+      vscode.window.showWarningMessage("Selected claim not found: " + claimId);
+    }
+  }
 
-        if (this.panel) {
-            try {
-                const serializedData = this.serializeTimelineData(data);
-                this.panel.webview.postMessage({
-                    command: 'updateData',
-                    payload: serializedData
-                });
-            } catch (error) {
-                console.error('Error updating webview data:', error);
-            }
-        } else if (data) {
-            this.createPanel(data);
-        }
+  /**
+   * Handle error messages from webview
+   */
+  private handleWebviewError(errorPayload: any): void {
+    console.error("Webview error:", errorPayload);
+
+    const message = errorPayload?.message || "Unknown webview error";
+    vscode.window.showErrorMessage(
+      "Timeline Error: " + message,
+      "Retry",
+      "Report Issue"
+    );
+  }
+
+  /**
+   * Format claim details for display
+   */
+  private formatClaimDetails(claim: ClaimItem): string {
+    const startDate = claim.startDate;
+    const endDate = claim.endDate;
+
+    const lines = [
+      "Type: " + claim.type,
+      "Start Date: " + startDate.toLocaleDateString(),
+      "End Date: " + endDate.toLocaleDateString(),
+      "Duration: " +
+        Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        ) +
+        " days",
+    ];
+
+    // Add type-specific details
+    if (claim.type === "rxTba" || claim.type === "rxHistory") {
+      if (claim.details.medication)
+        lines.push("Medication: " + claim.details.medication);
+      if (claim.details.dosage) lines.push("Dosage: " + claim.details.dosage);
+      if (claim.details.dayssupply)
+        lines.push("Days Supply: " + claim.details.dayssupply);
+    } else if (claim.type === "medHistory") {
+      if (claim.details.serviceType)
+        lines.push("Service: " + claim.details.serviceType);
+      if (claim.details.provider)
+        lines.push("Provider: " + claim.details.provider);
+      if (claim.details.amount) lines.push("Amount: $" + claim.details.amount);
     }
 
-    /**
-     * Handle messages from webview
-     */
-    private handleMessage(message: WebviewMessage): void {
-        try {
-            // Handle null or malformed messages
-            if (!message || typeof message !== 'object') {
-                console.warn('Received invalid message:', message);
-                return;
-            }
+    return lines.join("\n");
+  }
 
-            switch (message.command) {
-                case 'ready':
-                    if (this.currentData && this.panel) {
-                        const serializedData = this.serializeTimelineData(this.currentData);
-                        this.panel.webview.postMessage({
-                            command: 'updateData',
-                            payload: serializedData
-                        });
-                    }
-                    break;
+  /**
+   * Serialize timeline data for webview (convert dates to strings)
+   */
+  private serializeTimelineData(data: TimelineData): any {
+    return {
+      claims: data.claims.map((claim) => ({
+        ...claim,
+        startDate: claim.startDate.toISOString(),
+        endDate: claim.endDate.toISOString(),
+      })),
+      dateRange: {
+        start: data.dateRange.start.toISOString(),
+        end: data.dateRange.end.toISOString(),
+      },
+      metadata: data.metadata,
+    };
+  }
 
-                case 'select':
-                    this.handleClaimSelection(message.payload);
-                    break;
-
-                case 'error':
-                    this.handleWebviewError(message.payload);
-                    break;
-
-                default:
-                    console.warn('Unknown message command:', message.command);
-                    break;
-            }
-        } catch (error) {
-            console.error('Error handling webview message:', error);
-        }
-    }
-
-    /**
-     * Handle claim selection from timeline
-     */
-    private handleClaimSelection(claimId: string): void {
-        if (!this.currentData) {
-            return;
-        }
-
-        const selectedClaim = this.currentData.claims.find(claim => claim.id === claimId);
-        if (selectedClaim) {
-            const details = this.formatClaimDetails(selectedClaim);
-            vscode.window.showInformationMessage(
-                'Selected ' + selectedClaim.type + ' claim: ' + selectedClaim.displayName,
-                { modal: false, detail: details }
-            );
-        } else {
-            vscode.window.showWarningMessage(
-                'Selected claim not found: ' + claimId
-            );
-        }
-    }
-
-    /**
-     * Handle error messages from webview
-     */
-    private handleWebviewError(errorPayload: any): void {
-        console.error('Webview error:', errorPayload);
-        
-        const message = errorPayload?.message || 'Unknown webview error';
-        vscode.window.showErrorMessage(
-            'Timeline Error: ' + message,
-            'Retry',
-            'Report Issue'
-        );
-    }
-
-    /**
-     * Format claim details for display
-     */
-    private formatClaimDetails(claim: ClaimItem): string {
-        const startDate = claim.startDate;
-        const endDate = claim.endDate;
-        
-        const lines = [
-            'Type: ' + claim.type,
-            'Start Date: ' + startDate.toLocaleDateString(),
-            'End Date: ' + endDate.toLocaleDateString(),
-            'Duration: ' + Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + ' days'
-        ];
-
-        // Add type-specific details
-        if (claim.type === 'rxTba' || claim.type === 'rxHistory') {
-            if (claim.details.medication) lines.push('Medication: ' + claim.details.medication);
-            if (claim.details.dosage) lines.push('Dosage: ' + claim.details.dosage);
-            if (claim.details.dayssupply) lines.push('Days Supply: ' + claim.details.dayssupply);
-        } else if (claim.type === 'medHistory') {
-            if (claim.details.serviceType) lines.push('Service: ' + claim.details.serviceType);
-            if (claim.details.provider) lines.push('Provider: ' + claim.details.provider);
-            if (claim.details.amount) lines.push('Amount: $' + claim.details.amount);
-        }
-
-        return lines.join('\n');
-    }
-
-    /**
-     * Serialize timeline data for webview (convert dates to strings)
-     */
-    private serializeTimelineData(data: TimelineData): any {
-        return {
-            claims: data.claims.map(claim => ({
-                ...claim,
-                startDate: claim.startDate.toISOString(),
-                endDate: claim.endDate.toISOString()
-            })),
-            dateRange: {
-                start: data.dateRange.start.toISOString(),
-                end: data.dateRange.end.toISOString()
-            },
-            metadata: data.metadata
-        };
-    }
-
-    /**
-     * Generate HTML content for webview with interactive features
-     */
-    private getWebviewContent(): string {
-        return `<!DOCTYPE html>
+  /**
+   * Generate HTML content for webview with interactive features
+   */
+  private getWebviewContent(): string {
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1016,12 +1029,19 @@ export class TimelineRenderer {
         const vscode = acquireVsCodeApi();
         let timelineData = null;
         let svg = null;
-        let zoomContainer = null;
-        let axesContainer = null;
         let xScale = null;
         let yScale = null;
         let zoom = null;
         let currentTransform = d3.zoomIdentity;
+        
+        // Semantic zoom levels for time granularity
+        let currentZoomLevel = 1; // 0=years, 1=months, 2=weeks, 3=days
+        const zoomLevels = [
+            { name: 'Years', tickFormat: d3.timeFormat('%Y'), ticks: d3.timeYear.every(1) },
+            { name: 'Months', tickFormat: d3.timeFormat('%Y-%m'), ticks: d3.timeMonth.every(1) },
+            { name: 'Weeks', tickFormat: d3.timeFormat('%m/%d'), ticks: d3.timeWeek.every(1) },
+            { name: 'Days', tickFormat: d3.timeFormat('%m/%d'), ticks: d3.timeDay.every(1) }
+        ];
         
         // Interactive state
         let visibleClaimTypes = new Set();
@@ -1155,34 +1175,12 @@ export class TimelineRenderer {
                     addDebugInfo('SVG dimensions after resize: ' + newRect.width + 'x' + newRect.height);
                 }
                 
-                // Initialize enhanced zoom behavior with mouse controls
-                zoom = d3.zoom()
-                    .scaleExtent([0.05, 20])
-                    .wheelDelta(function(event) {
-                        addDebugInfo('Wheel event detected!', 'success');
-                        console.log('WEBVIEW DIAGNOSTIC: Wheel event:', event);
-                        // Custom wheel delta for smoother zooming
-                        const delta = -event.deltaY;
-                        const scale = event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002;
-                        return delta * scale * (event.ctrlKey ? 2 : 1); // Faster zoom with Ctrl
-                    })
-                    .filter(function(event) {
-                        addDebugInfo('Zoom filter: ' + event.type, 'info');
-                        console.log('WEBVIEW DIAGNOSTIC: Zoom filter called, event type:', event.type);
-                        // Allow zoom with wheel, pan with drag, but prevent conflicts
-                        return !event.ctrlKey || event.type === 'wheel';
-                    })
-                    .on('zoom', handleZoom)
-                    .on('start', handleZoomStart)
-                    .on('end', handleZoomEnd);
-
-                addDebugInfo('Zoom object created', 'success');
-                console.log('WEBVIEW DIAGNOSTIC: Zoom object created:', zoom);
-
-                // Apply zoom behavior
-                svg.call(zoom)
-                    .on('dblclick.zoom', handleDoubleClick) // Custom double-click behavior
-                    .on('contextmenu', handleRightClick); // Right-click context menu
+                // Initialize semantic zoom (no D3 zoom behavior needed)
+                console.log('ZOOM SETUP: Semantic zoom initialized');
+                addDebugInfo('Semantic zoom initialized', 'success');
+                
+                // Update the initial time axis
+                updateTimeAxis();
 
                 const hasZoomBehavior = !!svg.node().__zoom;
                 addDebugInfo('Zoom behavior applied: ' + hasZoomBehavior, hasZoomBehavior ? 'success' : 'error');
@@ -1254,38 +1252,26 @@ export class TimelineRenderer {
             // Enhanced zoom controls
             document.getElementById('zoomIn').addEventListener('click', () => {
                 addDebugInfo('Zoom In button clicked');
-                console.log('WEBVIEW DIAGNOSTIC: Zoom in clicked, svg:', !!svg, 'zoom:', !!zoom);
-                if (svg && zoom) {
-                    addDebugInfo('Executing zoom in...', 'success');
-                    console.log('WEBVIEW DIAGNOSTIC: Executing zoom in');
-                    svg.transition().duration(200).call(zoom.scaleBy, 1.4);
-                } else {
-                    addDebugInfo('Cannot zoom - svg or zoom not available', 'error');
-                    console.log('WEBVIEW DIAGNOSTIC: Cannot zoom - svg or zoom not available');
-                }
+                console.log('SEMANTIC ZOOM: Zoom in button clicked');
+                zoomIn();
             });
 
             document.getElementById('zoomOut').addEventListener('click', () => {
                 addDebugInfo('Zoom Out button clicked');
-                console.log('WEBVIEW DIAGNOSTIC: Zoom out clicked, svg:', !!svg, 'zoom:', !!zoom);
-                if (svg && zoom) {
-                    addDebugInfo('Executing zoom out...', 'success');
-                    console.log('WEBVIEW DIAGNOSTIC: Executing zoom out');
-                    svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.4);
-                } else {
-                    addDebugInfo('Cannot zoom - svg or zoom not available', 'error');
-                    console.log('WEBVIEW DIAGNOSTIC: Cannot zoom - svg or zoom not available');
-                }
+                console.log('SEMANTIC ZOOM: Zoom out button clicked');
+                zoomOut();
             });
 
             document.getElementById('zoomToFit').addEventListener('click', () => {
-                zoomToFit();
+                addDebugInfo('Zoom to Fit clicked');
+                console.log('SEMANTIC ZOOM: Zoom to fit - resetting to default');
+                resetZoom();
             });
 
             document.getElementById('resetZoom').addEventListener('click', () => {
-                if (svg && zoom) {
-                    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
-                }
+                addDebugInfo('Reset Zoom clicked');
+                console.log('SEMANTIC ZOOM: Reset zoom button clicked');
+                resetZoom();
             });
 
             // Enhanced pan controls with vertical panning
@@ -1375,26 +1361,24 @@ export class TimelineRenderer {
                 case '+':
                 case '=':
                     event.preventDefault();
-                    if (svg && zoom) {
-                        svg.transition().duration(150).call(zoom.scaleBy, zoomFactor);
-                    }
+                    console.log('SEMANTIC ZOOM: Keyboard zoom in');
+                    zoomIn();
                     break;
                 case '-':
                     event.preventDefault();
-                    if (svg && zoom) {
-                        svg.transition().duration(150).call(zoom.scaleBy, 1 / zoomFactor);
-                    }
+                    console.log('SEMANTIC ZOOM: Keyboard zoom out');
+                    zoomOut();
                     break;
                 case '0':
                     event.preventDefault();
-                    if (svg && zoom) {
-                        svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
-                    }
+                    console.log('SEMANTIC ZOOM: Keyboard reset zoom');
+                    resetZoom();
                     break;
                 case 'f':
                 case 'F':
                     event.preventDefault();
-                    zoomToFit();
+                    console.log('SEMANTIC ZOOM: Keyboard zoom to fit');
+                    resetZoom();
                     break;
                 case 'ArrowLeft':
                     if (event.shiftKey && svg && zoom) {
@@ -1435,59 +1419,58 @@ export class TimelineRenderer {
             }
         }
 
-        function handleZoom(event) {
-            console.log('WEBVIEW DIAGNOSTIC: Zoom event triggered:', event.transform);
-            addDebugInfo('Zoom transform: k=' + event.transform.k.toFixed(2) + ', x=' + event.transform.x.toFixed(0) + ', y=' + event.transform.y.toFixed(0), 'success');
-            currentTransform = event.transform;
-            
-            // Apply transform to zoom container (this moves all timeline elements)
-            if (zoomContainer) {
-                zoomContainer.attr('transform', currentTransform);
+        function zoomIn() {
+            if (currentZoomLevel < zoomLevels.length - 1) {
+                currentZoomLevel++;
+                console.log('SEMANTIC ZOOM: Zooming in to level', currentZoomLevel, '(' + zoomLevels[currentZoomLevel].name + ')');
+                addDebugInfo('Zoomed in to ' + zoomLevels[currentZoomLevel].name, 'success');
+                updateTimeAxis();
+                updateZoomIndicator();
+            } else {
+                console.log('SEMANTIC ZOOM: Already at maximum zoom level');
+                addDebugInfo('Maximum zoom level reached', 'info');
             }
-            
-            // Update axes with rescaled scales (axes are outside zoom container)
-            if (xScale && yScale && axesContainer) {
-                const newXScale = currentTransform.rescaleX(xScale);
-                const newYScale = currentTransform.rescaleY(yScale);
-                
-                // Update x-axis with adaptive formatting
-                const tickCount = Math.max(3, Math.min(20, Math.floor(currentTransform.k * 10)));
-                let tickFormat;
-                if (currentTransform.k > 5) {
-                    tickFormat = d3.timeFormat('%m/%d'); // Show month/day when zoomed in
-                } else if (currentTransform.k > 2) {
-                    tickFormat = d3.timeFormat('%Y-%m-%d'); // Show full date at medium zoom
-                } else {
-                    tickFormat = d3.timeFormat('%Y-%m'); // Show year-month when zoomed out
-                }
-                
-                const xAxis = d3.axisBottom(newXScale)
-                    .ticks(tickCount)
-                    .tickFormat(tickFormat);
-                
-                axesContainer.select('.x-axis')
-                    .call(xAxis);
-                
-                // Update y-axis
-                const yAxis = d3.axisLeft(newYScale)
-                    .tickFormat((d, i) => {
-                        const claim = timelineData.claims[i];
-                        if (!claim) return 'Claim ' + (i + 1);
-                        
-                        // Adjust label length based on zoom level
-                        const maxLength = Math.floor(Math.max(10, currentTransform.k * 15));
-                        const displayName = claim.displayName || (claim.type + ' ' + claim.id);
-                        return displayName.length > maxLength ? 
-                            displayName.substring(0, maxLength - 3) + '...' : 
-                            displayName;
-                    });
-                
-                axesContainer.select('.y-axis')
-                    .call(yAxis);
+        }
+        
+        function zoomOut() {
+            if (currentZoomLevel > 0) {
+                currentZoomLevel--;
+                console.log('SEMANTIC ZOOM: Zooming out to level', currentZoomLevel, '(' + zoomLevels[currentZoomLevel].name + ')');
+                addDebugInfo('Zoomed out to ' + zoomLevels[currentZoomLevel].name, 'success');
+                updateTimeAxis();
+                updateZoomIndicator();
+            } else {
+                console.log('SEMANTIC ZOOM: Already at minimum zoom level');
+                addDebugInfo('Minimum zoom level reached', 'info');
             }
+        }
+        
+        function resetZoom() {
+            currentZoomLevel = 1; // Default to months
+            console.log('SEMANTIC ZOOM: Reset to default level', currentZoomLevel, '(' + zoomLevels[currentZoomLevel].name + ')');
+            addDebugInfo('Zoom reset to ' + zoomLevels[currentZoomLevel].name, 'success');
+            updateTimeAxis();
+            updateZoomIndicator();
+        }
+        
+        function updateTimeAxis() {
+            if (!svg || !xScale || !timelineData) return;
             
-            // Update zoom level indicator
-            updateZoomIndicator(currentTransform.k);
+            const currentLevel = zoomLevels[currentZoomLevel];
+            console.log('SEMANTIC ZOOM: Updating time axis for', currentLevel.name);
+            
+            // Create new axis with appropriate ticks and format
+            const xAxis = d3.axisBottom(xScale)
+                .tickFormat(currentLevel.tickFormat)
+                .ticks(currentLevel.ticks);
+            
+            // Update the x-axis
+            svg.select('.x-axis')
+                .transition()
+                .duration(300)
+                .call(xAxis);
+                
+            console.log('SEMANTIC ZOOM: Time axis updated');
         }
 
         function handleZoomStart(event) {
@@ -1691,35 +1674,28 @@ export class TimelineRenderer {
             });
         }
 
-        function updateZoomIndicator(zoomLevel) {
-            // Update zoom level display in controls
-            let zoomText = '';
-            let zoomColor = 'var(--vscode-descriptionForeground)';
+        function updateZoomIndicator() {
+            const currentLevel = zoomLevels[currentZoomLevel];
+            const zoomText = currentLevel.name;
             
-            if (zoomLevel < 0.2) {
-                zoomText = 'Far Out';
-                zoomColor = 'var(--vscode-charts-blue)';
-            } else if (zoomLevel < 0.5) {
-                zoomText = 'Zoomed Out';
-                zoomColor = 'var(--vscode-charts-blue)';
-            } else if (zoomLevel > 5) {
-                zoomText = 'Very Close';
-                zoomColor = 'var(--vscode-charts-red)';
-            } else if (zoomLevel > 2) {
-                zoomText = 'Zoomed In';
-                zoomColor = 'var(--vscode-charts-orange)';
-            } else {
-                zoomText = 'Normal';
-                zoomColor = 'var(--vscode-charts-green)';
+            // Set color based on zoom level
+            let zoomColor = 'var(--vscode-descriptionForeground)';
+            if (currentZoomLevel === 0) {
+                zoomColor = 'var(--vscode-charts-blue)'; // Years - zoomed out
+            } else if (currentZoomLevel === 1) {
+                zoomColor = 'var(--vscode-charts-green)'; // Months - normal
+            } else if (currentZoomLevel === 2) {
+                zoomColor = 'var(--vscode-charts-orange)'; // Weeks - zoomed in
+            } else if (currentZoomLevel === 3) {
+                zoomColor = 'var(--vscode-charts-red)'; // Days - very zoomed in
             }
             
-            // Update zoom percentage display
+            // Update zoom level display
             const zoomInfo = document.getElementById('zoomInfo');
             if (zoomInfo) {
-                const percentage = Math.round(zoomLevel * 100);
-                zoomInfo.textContent = \`\${percentage}%\`;
+                zoomInfo.textContent = zoomText;
                 zoomInfo.style.color = zoomColor;
-                zoomInfo.title = \`Current zoom: \${percentage}% (\${zoomText})\\nRange: 5% - 2000%\\nDouble-click timeline to zoom in/fit\\nRight-click for zoom menu\`;
+                zoomInfo.title = 'Current time scale: ' + zoomText + '\\nZoom in for more detail, zoom out for broader view\\nShortcuts: +/- keys, 0 to reset';
             }
             
             // Update button titles with current zoom level and shortcuts
@@ -1729,18 +1705,18 @@ export class TimelineRenderer {
             const resetBtn = document.getElementById('resetZoom');
             
             if (zoomInBtn) {
-                zoomInBtn.title = \`Zoom In (+) - Current: \${Math.round(zoomLevel * 100)}%\\nShortcut: + or = key\`;
-                zoomInBtn.disabled = zoomLevel >= 20;
+                zoomInBtn.title = 'Zoom In (+) - Show more detail\\nCurrent: ' + zoomText + '\\nShortcut: + or = key';
+                zoomInBtn.disabled = currentZoomLevel >= zoomLevels.length - 1;
             }
             if (zoomOutBtn) {
-                zoomOutBtn.title = \`Zoom Out (-) - Current: \${Math.round(zoomLevel * 100)}%\\nShortcut: - key\`;
-                zoomOutBtn.disabled = zoomLevel <= 0.05;
+                zoomOutBtn.title = 'Zoom Out (-) - Show broader view\\nCurrent: ' + zoomText + '\\nShortcut: - key';
+                zoomOutBtn.disabled = currentZoomLevel <= 0;
             }
             if (zoomToFitBtn) {
-                zoomToFitBtn.title = \`Zoom to Fit (F) - Shows all visible claims\\nShortcut: F key\`;
+                zoomToFitBtn.title = 'Reset to Default View\\nShortcut: F key';
             }
             if (resetBtn) {
-                resetBtn.title = \`Reset View (0) - \${zoomText}\\nShortcut: 0 key\`;
+                resetBtn.title = 'Reset to Default View\\nShortcut: 0 key';
             }
         }
 
@@ -2231,14 +2207,6 @@ export class TimelineRenderer {
                     .attr('class', 'main-content')
                     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-                // Create zoom container that will receive transforms
-                zoomContainer = mainGroup.append('g')
-                    .attr('class', 'zoom-container');
-
-                // Create axes container (outside zoom transform)
-                axesContainer = mainGroup.append('g')
-                    .attr('class', 'axes-container');
-
                 const xAxis = d3.axisBottom(xScale)
                     .tickFormat(d3.timeFormat('%Y-%m-%d'))
                     .ticks(Math.min(10, Math.floor(innerWidth / 80)));
@@ -2255,8 +2223,8 @@ export class TimelineRenderer {
                             displayName;
                     });
 
-                // Add axes to axes container (not affected by zoom transform)
-                axesContainer.append('g')
+                // Add axes to main group
+                mainGroup.append('g')
                     .attr('class', 'x-axis axis')
                     .attr('transform', 'translate(0,' + innerHeight + ')')
                     .call(xAxis)
@@ -2266,12 +2234,12 @@ export class TimelineRenderer {
                     .attr('dy', '.15em')
                     .attr('transform', 'rotate(-45)');
 
-                axesContainer.append('g')
+                mainGroup.append('g')
                     .attr('class', 'y-axis axis')
                     .call(yAxis);
 
-                // Add claim bars to zoom container (will be affected by zoom transform)
-                const claimBars = zoomContainer.selectAll('.claim-bar')
+                // Add claim bars to main group
+                const claimBars = mainGroup.selectAll('.claim-bar')
                     .data(timelineData.claims)
                     .enter()
                     .append('rect')
@@ -2462,9 +2430,13 @@ export class TimelineRenderer {
                 emptyState.style.display = visibleClaimTypes.size === 0 ? 'flex' : 'none';
                 zoomHint.style.display = 'none';
                 
-                // Re-apply zoom behavior for timeline view
+                // Re-apply zoom behavior for timeline view and preserve transform
                 setTimeout(() => {
+                    const savedTransform = currentTransform;
                     updateZoomBehavior();
+                    if (svg && zoom && savedTransform) {
+                        svg.call(zoom.transform, savedTransform);
+                    }
                 }, 50);
                 
                 // Show zoom hint after a delay
@@ -2503,9 +2475,13 @@ export class TimelineRenderer {
                 // Re-render timeline to adjust for new size
                 setTimeout(() => {
                     if (timelineData && svg) {
+                        const savedTransform = currentTransform;
                         renderTimeline();
-                        // Re-apply zoom behavior after timeline is rendered
+                        // Re-apply zoom behavior after timeline is rendered and restore transform
                         updateZoomBehavior();
+                        if (zoom && savedTransform) {
+                            svg.call(zoom.transform, savedTransform);
+                        }
                     }
                 }, 100);
             }
@@ -2754,14 +2730,14 @@ export class TimelineRenderer {
     </script>
 </body>
 </html>`;
-    }
+  }
 
-    /**
-     * Dispose of resources
-     */
-    public dispose(): void {
-        if (this.panel) {
-            this.panel.dispose();
-        }
+  /**
+   * Dispose of resources
+   */
+  public dispose(): void {
+    if (this.panel) {
+      this.panel.dispose();
     }
+  }
 }

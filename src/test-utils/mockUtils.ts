@@ -734,13 +734,13 @@ export function createAdditionalVSCodeMocks() {
             get: vi.fn().mockImplementation((key: string, defaultValue?: any) => defaultValue),
             update: vi.fn().mockResolvedValue(undefined),
             has: vi.fn().mockReturnValue(true),
-            inspect: vi.fn().mockReturnValue({
+            inspect: vi.fn().mockImplementation((key: string) => ({
                 key: section ? `${section}.${key}` : key,
                 defaultValue: undefined,
                 globalValue: undefined,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined
-            })
+            }))
         })),
         
         // File system watcher

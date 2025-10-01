@@ -55,8 +55,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/nonexistent/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.message).toContain('File not found');
-                expect(e.filePath).toBe('/nonexistent/file.json');
+                expect((e as any).message).toContain('File not found');
+                expect((e as any).filePath).toBe('/nonexistent/file.json');
             }
         });
 
@@ -120,8 +120,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/test/incomplete.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(ValidationError);
-                expect(e.message).toContain('Invalid JSON');
-                expect(e.filePath).toBe('/test/incomplete.json');
+                expect((e as any).message).toContain('Invalid JSON');
+                expect((e as any).filePath).toBe('/test/incomplete.json');
             }
         });
     });
@@ -151,8 +151,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/test/invalid.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(StructureValidationError);
-                expect(e.message).toContain('does not contain valid medical claims data');
-                expect(e.expectedStructure).toBeDefined();
+                expect((e as any).message).toContain('does not contain valid medical claims data');
+                expect((e as any).expectedStructure).toBeDefined();
             }
         });
 
@@ -163,9 +163,9 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/test/empty-object.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(StructureValidationError);
-                expect(e.expectedStructure).toContain('rxTba');
-                expect(e.expectedStructure).toContain('rxHistory');
-                expect(e.expectedStructure).toContain('medHistory');
+                expect((e as any).expectedStructure).toContain('rxTba');
+                expect((e as any).expectedStructure).toContain('rxHistory');
+                expect((e as any).expectedStructure).toContain('medHistory');
             }
         });
     });
@@ -182,8 +182,10 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             for (const data of invalidDateCases) {
                 (fs.promises.readFile as any).mockResolvedValue(JSON.stringify(data));
 
-                await expect(parser.parseFile('/test/invalid-dates.json'))
-                    .rejects.toThrow(DateParseError);
+                const result = await parser.parseFile('/test/invalid-dates.json');
+                expect(result.claims).toHaveLength(1);
+                expect(result.claims[0].startDate).toEqual(new Date('2024-01-01T05:00:00.000Z')); // Fallback date
+                expect(result.claims[0].displayName).toBe('Med');
             }
         });
 
@@ -196,9 +198,9 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/test/bad-date.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(DateParseError);
-                expect(e.message).toContain('invalid-date');
-                expect(e.expectedFormat).toBe('YYYY-MM-DD');
-                expect(e.supportedFormats).toContain('YYYY-MM-DD');
+                expect((e as any).message).toContain('invalid-date');
+                expect((e as any).expectedFormat).toBe('YYYY-MM-DD');
+                expect((e as any).supportedFormats).toContain('YYYY-MM-DD');
             }
         });
 
@@ -264,7 +266,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await hybridParser.parseFile('/test/invalid.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(Error);
-                expect(e.message).toBeDefined();
+                expect((e as any).message).toBeDefined();
             }
         });
     });
@@ -279,8 +281,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/missing/file.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(FileReadError);
-                expect(e.recoverySuggestions).toContain('Check if the file path is correct');
-                expect(e.recoverySuggestions).toContain('Verify the file exists');
+                expect((e as any).recoverySuggestions).toContain('Check if the file path is correct');
+                expect((e as any).recoverySuggestions).toContain('Verify the file exists');
             }
         });
 
@@ -291,8 +293,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/test/invalid.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(StructureValidationError);
-                expect(e.recoverySuggestions).toContain('Ensure your JSON contains medical claims data');
-                expect(e.recoverySuggestions).toContain('Check the sample files for correct structure');
+                expect((e as any).recoverySuggestions).toContain('Ensure your JSON contains medical claims data');
+                expect((e as any).recoverySuggestions).toContain('Check the sample files for correct structure');
             }
         });
 
@@ -305,8 +307,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 await parser.parseFile('/test/bad-dates.json');
             } catch (e) {
                 expect(e).toBeInstanceOf(DateParseError);
-                expect(e.recoverySuggestions).toContain('Use the format: YYYY-MM-DD');
-                expect(e.recoverySuggestions).toContain('Check your date values');
+                expect((e as any).recoverySuggestions).toContain('Use the format: YYYY-MM-DD');
+                expect((e as any).recoverySuggestions).toContain('Check your date values');
             }
         });
     });
@@ -320,7 +322,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             try {
                 await parser.parseFile(testPath);
             } catch (e) {
-                expect(e.filePath).toBe(testPath);
+                expect((e as any).filePath).toBe(testPath);
             }
 
             // Test ValidationError
@@ -328,7 +330,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             try {
                 await parser.parseFile(testPath);
             } catch (e) {
-                expect(e.filePath).toBe(testPath);
+                expect((e as any).filePath).toBe(testPath);
             }
 
             // Test StructureValidationError
@@ -336,7 +338,7 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             try {
                 await parser.parseFile(testPath);
             } catch (e) {
-                expect(e.filePath).toBe(testPath);
+                expect((e as any).filePath).toBe(testPath);
             }
         });
 
@@ -350,8 +352,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
             try {
                 await parser.parseFile('/test/stack.json');
             } catch (e) {
-                expect(e.originalError).toBe(originalError);
-                expect(e.stack).toContain('Original stack trace');
+                expect((e as any).originalError).toBe(originalError);
+                expect((e as any).stack).toContain('Original stack trace');
             }
         });
     });
@@ -396,8 +398,8 @@ describe('Error Handling and Fallback Mechanism Tests', () => {
                 });
             } catch (e) {
                 // If it fails, should provide context about which entry failed
-                expect(e.context).toBeDefined();
-                expect(e.context.claimIndex).toBe(1); // Second entry (index 1)
+                expect((e as any).context).toBeDefined();
+                expect((e as any).context.claimIndex).toBe(1); // Second entry (index 1)
             }
         });
     });

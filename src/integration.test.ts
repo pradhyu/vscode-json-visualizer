@@ -100,7 +100,7 @@ describe('Integration Tests - Complete Extension Workflow', () => {
     // Helper function to get command handler by name
     const getCommandHandler = (commandName: string) => {
         const commandCall = (vscode.commands.registerCommand as any).mock.calls.find(
-            call => call[0] === commandName
+            (call: any[]) => call[0] === commandName
         );
         return commandCall ? commandCall[1] : null;
     };
@@ -210,7 +210,7 @@ describe('Integration Tests - Complete Extension Workflow', () => {
 
             // Get the registered command handler for viewTimeline (second command registered)
             const viewTimelineCall = (vscode.commands.registerCommand as any).mock.calls.find(
-                call => call[0] === 'claimsTimeline.viewTimeline'
+                (call: any[]) => call[0] === 'claimsTimeline.viewTimeline'
             );
             const commandHandler = viewTimelineCall[1];
             const testUri = { fsPath: '/test/file.json' };

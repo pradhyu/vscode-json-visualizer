@@ -6,7 +6,8 @@
  */
 
 import { ClaimsParser } from './claimsParser';
-import { DateParseError } from './errorHandling';
+import { DateParseError } from './types';
+import { ConfigManager } from './configManager';
 
 interface TestFailure {
     testFile: string;
@@ -186,7 +187,8 @@ export class TestValidator {
     public async validateParserBehavior(): Promise<void> {
         console.log('=== PARSER BEHAVIOR VALIDATION ===\n');
         
-        const parser = new ClaimsParser();
+        const configManager = new ConfigManager();
+        const parser = new ClaimsParser(configManager.getDefaultConfig());
         const mockConfig = {
             rxTbaPath: 'rxTba',
             rxHistoryPath: 'rxHistory', 
@@ -208,8 +210,8 @@ export class TestValidator {
             console.log('   ✓ Parser handles invalid dates gracefully');
             console.log('   ✓ Result:', result[0]?.startDate);
         } catch (error) {
-            console.log('   ✗ Parser throws error:', error.constructor.name);
-            console.log('   ✗ Error message:', error.message);
+            console.log('   ✗ Parser throws error:', (error as Error).constructor.name);
+            console.log('   ✗ Error message:', (error as Error).message);
         }
 
         // Test 2: How does parser handle empty dates?
@@ -221,8 +223,8 @@ export class TestValidator {
             console.log('   ✓ Parser handles empty dates gracefully');
             console.log('   ✓ Result:', result[0]?.startDate);
         } catch (error) {
-            console.log('   ✗ Parser throws error:', error.constructor.name);
-            console.log('   ✗ Error message:', error.message);
+            console.log('   ✗ Parser throws error:', (error as Error).constructor.name);
+            console.log('   ✗ Error message:', (error as Error).message);
         }
 
         // Test 3: How does parser handle null dates?
@@ -234,8 +236,8 @@ export class TestValidator {
             console.log('   ✓ Parser handles null dates gracefully');
             console.log('   ✓ Result:', result[0]?.startDate);
         } catch (error) {
-            console.log('   ✗ Parser throws error:', error.constructor.name);
-            console.log('   ✗ Error message:', error.message);
+            console.log('   ✗ Parser throws error:', (error as Error).constructor.name);
+            console.log('   ✗ Error message:', (error as Error).message);
         }
 
         // Test 4: What is the actual sorting behavior?
@@ -251,7 +253,7 @@ export class TestValidator {
             const timelineData = (parser as any).generateTimelineData(claims);
             console.log('   ✓ Actual sort order:', timelineData.claims.map((c: any) => `${c.id} (${c.startDate.toISOString().split('T')[0]})`));
         } catch (error) {
-            console.log('   ✗ Error testing sorting:', error.message);
+            console.log('   ✗ Error testing sorting:', (error as Error).message);
         }
 
         console.log('\n=== VALIDATION COMPLETE ===\n');

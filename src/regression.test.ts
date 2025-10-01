@@ -710,7 +710,7 @@ describe('Regression Tests - Error Handling and Fallback Mechanisms', () => {
                 }
             } catch (error) {
                 // Accept various error types that could occur during parsing
-                expect(error.message).toMatch(/date|undefined|parsing|validation|Cannot read properties|No valid claims/i);
+                expect((error as Error).message).toMatch(/date|undefined|parsing|validation|Cannot read properties|No valid claims/i);
             }
         });
     });
