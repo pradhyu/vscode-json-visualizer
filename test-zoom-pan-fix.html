@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zoom/Pan Fix Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #1e1e1e;
+        color: #cccccc;
+      }
+      .test-container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .test-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid #444;
+        border-radius: 8px;
+        background-color: #2d2d30;
+      }
+      .test-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #4fc3f7;
+      }
+      .test-item {
+        margin: 10px 0;
+        padding: 8px;
+        background-color: #3c3c3c;
+        border-radius: 4px;
+      }
+      .test-status {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 10px;
+        vertical-align: middle;
+      }
+      .pass {
+        background-color: #4caf50;
+      }
+      .fail {
+        background-color: #f44336;
+      }
+      .pending {
+        background-color: #ff9800;
+      }
+      .instructions {
+        background-color: #1a237e;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .code-block {
+        background-color: #0d1117;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        margin: 10px 0;
+        border-left: 4px solid #4fc3f7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>Zoom/Pan Fix Validation Test</h1>
+
+      <div class="instructions">
+        <h3>Test Instructions</h3>
+        <p>
+          This test validates that the zoom/pan fix has been properly
+          implemented. Follow these steps:
+        </p>
+        <ol>
+          <li>Open the medical claims timeline in VS Code</li>
+          <li>Load some sample data to display claims</li>
+          <li>Test each functionality listed below</li>
+          <li>Mark each test as pass/fail based on the expected behavior</li>
+        </ol>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">1. Container Structure Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Zoom Container Exists:</strong> Inspect the DOM and verify
+          that a 'zoom-container' group exists within the main SVG
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Axes Container Separate:</strong> Verify that axes are in a
+          separate 'axes-container' group, not affected by zoom transforms
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Claim Bars in Zoom Container:</strong> Verify that claim bars
+          are children of the zoom-container group
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">2. Mouse Zoom Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Mouse Wheel Zoom:</strong> Scroll mouse wheel over timeline -
+          should zoom in/out smoothly around cursor
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Visual Transform Applied:</strong> During zoom, claim bars
+          should scale and move visually (not just debug logs)
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Axes Update:</strong> X and Y axes should update with
+          appropriate tick marks and labels during zoom
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">3. Mouse Pan Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Click and Drag Pan:</strong> Click and drag on timeline -
+          should pan smoothly in drag direction
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>All Elements Move Together:</strong> During pan, claim bars
+          and content should move as a cohesive unit
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Pan Boundaries:</strong> Panning should be constrained to
+          reasonable limits
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">4. Button Control Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Zoom In Button (🔍+):</strong> Should zoom in smoothly with
+          animation
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Zoom Out Button (🔍-):</strong> Should zoom out smoothly with
+          animation
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Reset View Button (⌂):</strong> Should return to default zoom
+          and pan state
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Zoom to Fit Button (⤢):</strong> Should zoom and pan to show
+          all claims optimally
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Pan Buttons (↑↓←→):</strong> Should pan in corresponding
+          directions
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">5. Keyboard Shortcut Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>+ or = Key:</strong> Should zoom in (same as zoom in button)
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>- Key:</strong> Should zoom out (same as zoom out button)
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>0 Key:</strong> Should reset view (same as reset button)
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>F Key:</strong> Should zoom to fit (same as zoom to fit
+          button)
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Shift + Arrow Keys:</strong> Should pan in arrow directions
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">6. Visual Feedback Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Zoom Level Indicator:</strong> Should update percentage
+          display during zoom operations
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Button State Updates:</strong> Zoom buttons should disable at
+          limits (5% and 2000%)
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Cursor Changes:</strong> Cursor should change during zoom
+          (zoom-in) and pan (move) operations
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Smooth Transitions:</strong> Programmatic zoom/pan should have
+          smooth animations
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">7. View Mode Persistence Tests</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Timeline to Table:</strong> Switch from Timeline to Table view
+          - zoom state should be preserved when switching back
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Timeline to Both:</strong> Switch from Timeline to Both view -
+          zoom should work in timeline portion
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Both View Isolation:</strong> In Both view, zoom/pan should
+          only affect timeline portion, not table
+        </div>
+      </div>
+
+      <div class="test-section">
+        <div class="test-title">8. Performance and Edge Cases</div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Large Dataset:</strong> Test with many claims (50+) - zoom/pan
+          should remain responsive
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Empty Dataset:</strong> Test with no claims - zoom controls
+          should handle gracefully
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Extreme Zoom Levels:</strong> Test zoom limits (5% and 2000%)
+          - should be constrained properly
+        </div>
+        <div class="test-item">
+          <span class="test-status pending"></span>
+          <strong>Rapid Operations:</strong> Rapidly zoom/pan - should handle
+          without lag or visual artifacts
+        </div>
+      </div>
+
+      <div class="code-block">
+        <strong>Expected Debug Output:</strong><br />
+        When zoom/pan is working correctly, you should see debug messages
+        like:<br />
+        • "Zoom transform: k=1.40, x=-50, y=10" (transforms being applied)<br />
+        • "SVG dimensions after render: 1389x600" (proper SVG sizing)<br />
+        • "Zoom behavior applied: true" (zoom behavior initialized)<br />
+        <br />
+        <strong>Key Difference from Before:</strong><br />
+        Previously, you would see transform values changing in debug logs but no
+        visual movement.<br />
+        Now, you should see both debug logs AND actual visual movement of
+        timeline elements.
+      </div>
+
+      <div class="instructions">
+        <h3>Success Criteria</h3>
+        <p>The fix is successful if:</p>
+        <ul>
+          <li>
+            All zoom and pan operations result in
+            <strong>visible movement</strong> of timeline elements
+          </li>
+          <li>Debug logs show transform values changing (as before)</li>
+          <li>Zoom level indicator updates correctly</li>
+          <li>
+            All interaction methods (mouse, buttons, keyboard) work consistently
+          </li>
+          <li>Performance is smooth without lag or visual artifacts</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Allow clicking test items to toggle status
+      document.querySelectorAll(".test-item").forEach((item) => {
+        const status = item.querySelector(".test-status");
+        item.addEventListener("click", () => {
+          if (status.classList.contains("pending")) {
+            status.classList.remove("pending");
+            status.classList.add("pass");
+          } else if (status.classList.contains("pass")) {
+            status.classList.remove("pass");
+            status.classList.add("fail");
+          } else {
+            status.classList.remove("fail");
+            status.classList.add("pending");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

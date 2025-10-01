@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Zoom Test</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <h1>Simple Zoom Test</h1>
+    <p>This tests if the zoom transform string generation works correctly.</p>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        // Test the transform string generation that was causing issues
+        function testTransformString() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                // Test the old template literal approach
+                const event = { transform: { x: 100, y: 50, k: 1.5 } };
+                
+                // This is what was causing the syntax error
+                const transformString1 = `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`;
+                
+                // This is the fixed version
+                const transformString2 = 'translate(' + event.transform.x + ',' + event.transform.y + ') scale(' + event.transform.k + ')';
+                
+                results.innerHTML = `
+                    <h3>Transform String Tests:</h3>
+                    <p><strong>Template literal:</strong> ${transformString1}</p>
+                    <p><strong>String concatenation:</strong> ${transformString2}</p>
+                    <p><strong>Match:</strong> ${transformString1 === transformString2 ? '✅ YES' : '❌ NO'}</p>
+                    <p><strong>Expected:</strong> translate(100,50) scale(1.5)</p>
+                `;
+                
+                console.log('Template literal result:', transformString1);
+                console.log('String concatenation result:', transformString2);
+                console.log('Both methods produce same result:', transformString1 === transformString2);
+                
+            } catch (error) {
+                results.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error('Transform string test failed:', error);
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testTransformString);
+    </script>
+</body>
+</html>

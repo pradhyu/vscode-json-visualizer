@@ -1,0 +1,52 @@
+
+> medical-claims-timeline-viewer@0.0.1 test
+> vitest run --run src/parser-validation-fixes.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v1.6.1 /home/pk/git/vscode-json-viewer
+
+stderr | src/parser-validation-fixes.test.ts > Parser Validation Fixes - Unit Tests > Output format standardization - Requirement 1.1 > should handle missing fields with appropriate fallbacks
+Missing daysSupply for rxTba claim 0, using default of 30 days
+Missing dos field for rxTba claim rx2, using fallback date
+Missing daysSupply for rxTba claim rx2, using default of 30 days
+
+stderr | src/parser-validation-fixes.test.ts > Parser Validation Fixes - Unit Tests > Output format standardization - Requirement 1.1 > should maintain consistent property types across all claims
+Missing daysSupply for rxTba claim rx1, using default of 30 days
+Missing daysSupply for rxHistory claim rxh1, using default of 30 days
+
+stderr | src/parser-validation-fixes.test.ts > Parser Validation Fixes - Unit Tests > Output format standardization - Requirement 1.1 > should sort claims by start date (most recent first)
+Missing daysSupply for rxTba claim rx1, using default of 30 days
+Missing daysSupply for rxTba claim rx2, using default of 30 days
+Missing daysSupply for rxTba claim rx3, using default of 30 days
+
+ ❯ src/parser-validation-fixes.test.ts  (17 tests | 1 failed) 90ms
+   ❯ src/parser-validation-fixes.test.ts > Parser Validation Fixes - Unit Tests > Output format standardization - Requirement 1.1 > should calculate correct date ranges
+     → expected 2024-01-01T05:00:00.000Z to deeply equal 2024-01-01T00:00:00.000Z
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/parser-validation-fixes.test.ts > Parser Validation Fixes - Unit Tests > Output format standardization - Requirement 1.1 > should calculate correct date ranges
+AssertionError: expected 2024-01-01T05:00:00.000Z to deeply equal 2024-01-01T00:00:00.000Z
+
+- Expected
++ Received
+
+- 2024-01-01T00:00:00.000Z
++ 2024-01-01T05:00:00.000Z
+
+ ❯ src/parser-validation-fixes.test.ts:434:50
+    432|             
+    433|             // Date range should span from earliest start to latest end
+    434|             expect(timelineData.dateRange.start).toEqual(new Date('202…
+       |                                                  ^
+    435|             expect(timelineData.dateRange.end).toEqual(new Date('2024-…
+    436|             
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  23:04:33
+   Duration  1.31s (transform 386ms, setup 73ms, collect 342ms, tests 90ms, environment 0ms, prepare 283ms)
+

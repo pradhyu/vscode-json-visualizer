@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Zoom Test</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #1e1e1e;
+        color: #cccccc;
+      }
+
+      .container {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #3c3c3c;
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .controls {
+        padding: 10px;
+        background-color: #252526;
+        border-bottom: 1px solid #3c3c3c;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        background-color: #0e639c;
+        color: #ffffff;
+        border: none;
+        border-radius: 3px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .btn:hover {
+        background-color: #007acc;
+      }
+
+      .timeline-svg {
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        background-color: #1e1e1e;
+      }
+
+      .timeline-svg:active {
+        cursor: grabbing;
+      }
+
+      .test-rect {
+        fill: #ff6b6b;
+        stroke: #ffffff;
+        stroke-width: 1;
+      }
+
+      .axis text {
+        fill: #cccccc;
+        font-size: 11px;
+      }
+
+      .axis path,
+      .axis line {
+        stroke: #3c3c3c;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Debug Zoom Test</h2>
+    <div class="container">
+      <div class="controls">
+        <button id="zoomIn" class="btn">🔍+ Zoom In</button>
+        <button id="zoomOut" class="btn">🔍- Zoom Out</button>
+        <button id="resetZoom" class="btn">⌂ Reset</button>
+        <button id="panLeft" class="btn">← Pan Left</button>
+        <button id="panRight" class="btn">→ Pan Right</button>
+        <span id="status" style="margin-left: 20px; color: #969696"
+          >Status: Loading...</span
+        >
+      </div>
+      <svg id="timeline" class="timeline-svg"></svg>
+    </div>
+
+    <script>
+      console.log("Starting debug test...");
+      console.log("D3 version:", d3.version);
+
+      let svg, zoom, xScale, yScale;
+      let currentTransform = d3.zoomIdentity;
+
+      function updateStatus(message) {
+        document.getElementById("status").textContent = "Status: " + message;
+        console.log("STATUS:", message);
+      }
+
+      function initializeDebugTimeline() {
+        updateStatus("Initializing...");
+
+        try {
+          // Select SVG
+          svg = d3.select("#timeline");
+          console.log("SVG selected:", svg);
+          console.log("SVG empty?", svg.empty());
+
+          if (svg.empty()) {
+            throw new Error("SVG element not found");
+          }
+
+          // Clear any existing content
+          svg.selectAll("*").remove();
+
+          // Set up dimensions
+          const width = 800;
+          const height = 400;
+          const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+          const innerWidth = width - margin.left - margin.right;
+          const innerHeight = height - margin.top - margin.bottom;
+
+          // Create scales
+          xScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
+
+          yScale = d3.scaleLinear().domain([0, 50]).range([innerHeight, 0]);
+
+          // Create main group
+          const mainGroup = svg
+            .append("g")
+            .attr("class", "main-content")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          // Add axes
+          const xAxis = d3.axisBottom(xScale);
+          const yAxis = d3.axisLeft(yScale);
+
+          mainGroup
+            .append("g")
+            .attr("class", "x-axis axis")
+            .attr("transform", `translate(0,${innerHeight})`)
+            .call(xAxis);
+
+          mainGroup.append("g").attr("class", "y-axis axis").call(yAxis);
+
+          // Add test rectangles
+          const testData = [
+            { x: 10, y: 10, width: 20, height: 15, color: "#FF6B6B" },
+            { x: 40, y: 25, width: 25, height: 10, color: "#4ECDC4" },
+            { x: 70, y: 35, width: 15, height: 12, color: "#45B7D1" },
+          ];
+
+          mainGroup
+            .selectAll(".test-rect")
+            .data(testData)
+            .enter()
+            .append("rect")
+            .attr("class", "test-rect")
+            .attr("x", (d) => xScale(d.x))
+            .attr("y", (d) => yScale(d.y + d.height))
+            .attr("width", (d) => xScale(d.width) - xScale(0))
+            .attr("height", (d) => yScale(0) - yScale(d.height))
+            .attr("fill", (d) => d.color);
+
+          // Initialize zoom
+          zoom = d3.zoom().scaleExtent([0.1, 10]).on("zoom", handleZoom);
+
+          svg.call(zoom);
+
+          updateStatus("Initialized successfully! Try zooming and panning.");
+          console.log("Zoom object:", zoom);
+        } catch (error) {
+          updateStatus("Error: " + error.message);
+          console.error("Initialization error:", error);
+        }
+      }
+
+      function handleZoom(event) {
+        currentTransform = event.transform;
+        console.log("Zoom event:", event.transform);
+
+        if (xScale && yScale) {
+          const newXScale = currentTransform.rescaleX(xScale);
+          const newYScale = currentTransform.rescaleY(yScale);
+
+          // Update rectangles
+          svg
+            .selectAll(".test-rect")
+            .attr("x", (d) => newXScale(d.x))
+            .attr("y", (d) => newYScale(d.y + d.height))
+            .attr("width", (d) => newXScale(d.width) - newXScale(0))
+            .attr("height", (d) => newYScale(0) - newYScale(d.height));
+
+          // Update axes
+          const xAxis = d3.axisBottom(newXScale);
+          const yAxis = d3.axisLeft(newYScale);
+
+          svg.select(".x-axis").call(xAxis);
+          svg.select(".y-axis").call(yAxis);
+
+          updateStatus(`Zoom: ${Math.round(currentTransform.k * 100)}%`);
+        }
+      }
+
+      // Button handlers
+      document.getElementById("zoomIn").addEventListener("click", () => {
+        console.log("Zoom in clicked");
+        if (svg && zoom) {
+          svg.transition().duration(200).call(zoom.scaleBy, 1.5);
+        }
+      });
+
+      document.getElementById("zoomOut").addEventListener("click", () => {
+        console.log("Zoom out clicked");
+        if (svg && zoom) {
+          svg
+            .transition()
+            .duration(200)
+            .call(zoom.scaleBy, 1 / 1.5);
+        }
+      });
+
+      document.getElementById("resetZoom").addEventListener("click", () => {
+        console.log("Reset zoom clicked");
+        if (svg && zoom) {
+          svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+        }
+      });
+
+      document.getElementById("panLeft").addEventListener("click", () => {
+        console.log("Pan left clicked");
+        if (svg && zoom) {
+          svg.transition().duration(200).call(zoom.translateBy, 50, 0);
+        }
+      });
+
+      document.getElementById("panRight").addEventListener("click", () => {
+        console.log("Pan right clicked");
+        if (svg && zoom) {
+          svg.transition().duration(200).call(zoom.translateBy, -50, 0);
+        }
+      });
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (event) => {
+        if (event.target.tagName === "INPUT") return;
+
+        switch (event.key) {
+          case "+":
+          case "=":
+            event.preventDefault();
+            if (svg && zoom) {
+              svg.transition().duration(150).call(zoom.scaleBy, 1.2);
+            }
+            break;
+          case "-":
+            event.preventDefault();
+            if (svg && zoom) {
+              svg
+                .transition()
+                .duration(150)
+                .call(zoom.scaleBy, 1 / 1.2);
+            }
+            break;
+          case "0":
+            event.preventDefault();
+            if (svg && zoom) {
+              svg
+                .transition()
+                .duration(300)
+                .call(zoom.transform, d3.zoomIdentity);
+            }
+            break;
+        }
+      });
+
+      // Initialize when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("DOM loaded, initializing...");
+        initializeDebugTimeline();
+      });
+
+      // Also try immediate initialization
+      setTimeout(() => {
+        if (!svg) {
+          console.log("Trying delayed initialization...");
+          initializeDebugTimeline();
+        }
+      }, 100);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Layout Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #cccccc;
+        }
+        
+        .timeline-container {
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .timeline-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .timeline-sidebar {
+            width: 220px;
+            min-width: 200px;
+            max-width: 280px;
+            background-color: #252526;
+            border-right: 1px solid #3c3c3c;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .sidebar-header {
+            padding: 12px;
+            border-bottom: 1px solid #3c3c3c;
+            background-color: #2d2d30;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .legend-container {
+            padding: 8px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin: 0 8px;
+            border: 1px solid transparent;
+        }
+        
+        .legend-item:hover {
+            background-color: #2a2d2e;
+        }
+        
+        .legend-item.active {
+            background-color: #094771;
+            border-color: #007acc;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #3c3c3c;
+            flex-shrink: 0;
+        }
+        
+        .legend-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .legend-text {
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+        
+        .legend-count {
+            font-size: 10px;
+            color: #969696;
+            font-weight: normal;
+        }
+        
+        .legend-toggle-all {
+            margin: 8px;
+            padding: 6px 12px;
+            background-color: #0e639c;
+            color: #ffffff;
+            border: none;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .timeline-chart-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #1e1e1e;
+        }
+        
+        .timeline-controls {
+            padding: 10px 15px;
+            background-color: #252526;
+            border-bottom: 1px solid #3c3c3c;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .view-toggle-button {
+            background-color: #0e639c;
+            color: #ffffff;
+            border: none;
+            border-radius: 3px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .view-toggle-button.active {
+            background-color: #007acc;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            background-color: #1e1e1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #969696;
+        }
+    </style>
+</head>
+<body>
+    <div class="timeline-container">
+        <div class="timeline-main">
+            <div class="timeline-sidebar">
+                <div class="sidebar-header">
+                    📊 Claim Types
+                </div>
+                <div class="legend-container">
+                    <div class="legend-item active">
+                        <div class="legend-color" style="background-color: #FF6B6B;"></div>
+                        <div class="legend-content">
+                            <div class="legend-text">Current Prescriptions</div>
+                            <div class="legend-count">5 claims</div>
+                        </div>
+                    </div>
+                    <div class="legend-item active">
+                        <div class="legend-color" style="background-color: #4ECDC4;"></div>
+                        <div class="legend-content">
+                            <div class="legend-text">Prescription History</div>
+                            <div class="legend-count">12 claims</div>
+                        </div>
+                    </div>
+                    <div class="legend-item active">
+                        <div class="legend-color" style="background-color: #45B7D1;"></div>
+                        <div class="legend-content">
+                            <div class="legend-text">Medical Services</div>
+                            <div class="legend-count">8 claims</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="legend-toggle-all">Hide All</button>
+            </div>
+            <div class="timeline-chart-area">
+                <div class="timeline-controls">
+                    <div class="view-toggle">
+                        <button class="view-toggle-button active">📊 Timeline</button>
+                        <button class="view-toggle-button">📋 Table</button>
+                        <button class="view-toggle-button">📊📋 Both</button>
+                    </div>
+                </div>
+                <div class="timeline-content">
+                    Chart Area - Much Bigger Now!
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
